@@ -820,7 +820,7 @@
     <div class="header-left">
       <div class="badge-bar">
         <span class="badge-prototype">ClinPGx / PharmDOG — Paridade Funcional 100%</span>
-        <span id="api-status-badge" class="badge-engine">● Motor GSI Online (api.clinpgx.org)</span>
+        <span id="api-status-badge" class="badge-engine">● Motor GSI Online (Proxy GENX)</span>
       </div>
       <h1>ClinPGx CDSS: Sistema de Decisão Farmacogenômica</h1>
       <p class="header-desc">
@@ -1148,34 +1148,28 @@ function computeLocalPhenotype(gene, a1, a2) {
   return { pheno: total >= 2 ? "Normal Function" : (total === 0 ? "Poor Function" : "Intermediate Function"), score: total };
 }
 
-// Master GSI Call with fallback
+// Master GSI call: same-origin serverless proxy, with local fallback if unavailable.
 async function fetchGsiEvaluation(patientGenotypes, comedications = [], sources = ["cpic", "dpwg", "fda"]) {
-  const url = `https://api.clinpgx.org/v1/site/gsi?view=most&sources=${encodeURIComponent(sources.join(","))}`;
-  const payload = {};
-  for (const [gene, alleles] of Object.entries(patientGenotypes)) {
-    payload[gene] = alleles;
-  }
-
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-    const res = await fetch(url, {
+    const res = await fetch("/api/gsi", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ genotypes: patientGenotypes, sources }),
       signal: controller.signal
     });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const data = (await res.json()).data;
-      return { success: true, isLiveApi: true, data };
+    if (!res.ok) throw new Error("GENX proxy HTTP " + res.status);
+    const response = await res.json();
+    if (!response || !response.data || typeof response.data !== "object") {
+      throw new Error("Invalid GSI proxy response");
     }
-    throw new Error(`API returned HTTP ${res.status}`);
+    return { success: true, isLiveApi: true, data: response.data };
   } catch (err) {
-    console.warn("GSI API Live call failed, switching to Local Fallback Engine:", err.message);
+    console.warn("GENX GSI proxy unavailable; using a limited local estimate:", err.message);
     return { success: true, isLiveApi: false, data: runLocalFallbackEngine(patientGenotypes, comedications) };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -1524,10 +1518,10 @@ async function runGsiPipeline() {
   const badge = document.getElementById("api-status-badge");
   if (result.isLiveApi) {
     badge.className = "badge-engine";
-    badge.textContent = "● Motor GSI Online (api.clinpgx.org)";
+    badge.textContent = "● Motor GSI Online (Proxy GENX)";
   } else {
     badge.className = "badge-engine offline";
-    badge.textContent = "● Motor Local CPIC (Modo Offline Ativo)";
+    badge.textContent = "● Motor Local (Estimativa Offline)";
   }
 
   currentGsiData = result.data;
