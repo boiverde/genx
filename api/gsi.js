@@ -1,42 +1,112 @@
-// GENX server-only GSI proxy. Fail closed until credentials are configured.
+// GENX serverless GSI gateway; sensitive Supabase credentials are server-only.
+// Note: Origin/Referer is not authentication. All browser traffic is public and rate-limited.
 const { createHash, timingSafeEqual } = require('node:crypto');
-const API = 'https://api.clinpgx.org/v1/site/gsi';
+const ALLOWED_SOURCES = new Set(['cpic','dpwg','fda']);
 const GENE = /^[A-Za-z0-9_-]{2,24}$/;
-function reply(res, status, data) { res.setHeader('Cache-Control','no-store'); return res.status(status).json(data); }
-function safeEqual(a,b) { const x=Buffer.from(a||''); const y=Buffer.from(b||''); return x.length===y.length && timingSafeEqual(x,y); }
-module.exports = async function handler(req,res) {
- if(req.method!=='POST') { res.setHeader('Allow','POST');return reply(res,405,{error:'method_not_allowed'}); }
- const url=process.env.SUPABASE_URL;
- const secret=process.env.SUPABASE_SERVICE_ROLE_KEY;
- const token=process.env.GENX_PROXY_TOKEN;
- if(!url||!secret||!token) return reply(res,503,{error:'proxy_not_configured'});
- if(!safeEqual((req.headers.authorization||'').replace(/^Bearer /i,''),token)) return reply(res,401,{error:'unauthorized'});
- const data=req.body||{};
- const raw=data.genotypes;
- if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).length<1||Object.keys(raw).length>25) return reply(res,400,{error:'invalid_genotypes'});
- const sorted={};
- for(const gene of Object.keys(raw).sort()) {
-  const v=raw[gene];
-  if(!GENE.test(gene)||!Array.isArray(v)||v.length!==2||v.some(x=>typeof x!=='string'||x.length>32))return reply(res,400,{error:'invalid_genotypes'});
-  sorted[gene]=v;
- }
- const sources=Array.isArray(data.sources)?data.sources:['cpic','dpwg','fda'];
- if(!sources.length||sources.length>3||sources.some(s=>!['cpic','dpwg','fda'].includes(s)))return reply(res,400,{error:'invalid_sources'});
- const payload=JSON.stringify({genotypes:sorted,sources:[...new Set(sources)].sort()});
- if(payload.length>12000)return reply(res,413,{error:'payload_too_large'});
- const id=createHash('sha256').update(payload).digest('hex');
- const base=url.replace(/\/$/,'')+'/rest/v1/gsi_cache';
- const headers={apikey:secret,Authorization:'Bearer '+secret,'Content-Type':'application/json'};
- try {
-  const cached=await fetch(base+'?id=eq.'+id+'&expires_at=gt.'+encodeURIComponent(new Date().toISOString())+'&select=response_payload',{headers,signal:AbortSignal.timeout(4000)});
-  if(!cached.ok)throw new Error('cache_read_failed');
-  const hit=await cached.json();
-  if(hit.length)return reply(res,200,{source:'cache',data:hit[0].response_payload});
-  const upstream=await fetch(API+'?view=most&sources='+encodeURIComponent([...new Set(sources)].sort().join(',')),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sorted),signal:AbortSignal.timeout(9000)});
-  if(!upstream.ok)return reply(res,502,{error:'upstream_unavailable',status:upstream.status});
-  const result=await upstream.json();
-  const persist=await fetch(base+'?on_conflict=id',{method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id,genotype_payload:sorted,response_payload:result,expires_at:new Date(Date.now()+86400000).toISOString()})});
-  if(!persist.ok)return reply(res,503,{error:'cache_write_failed'});
-  return reply(res,200,{source:'upstream',data:result});
- } catch(e){return reply(res,503,{error:'proxy_temporarily_unavailable'});}
+function send(res,status,value) {
+  res.setHeader('Cache-Control','no-store');
+  return res.status(status).json(value);
+}
+function timingSafeToken(a,b) {
+  const x=Buffer.from(a||''),y=Buffer.from(b||'');
+  return x.length===y.length && timingSafeEqual(x,y);
+}
+function allowedSite(value,originHeader) {
+  if(typeof value!=='string'||value.length>2048)return false;
+  try {
+    const u=new URL(value);
+    if(u.username||u.password||u.hash)return false;
+    if(originHeader&&(u.pathname!=='/'||u.search))return false;
+    if(u.protocol==='https:'&&u.host==='genx-sand.vercel.app')return true;
+    return process.env.VERCEL_ENV!=='production' &&
+      (u.hostname==='localhost'||u.hostname==='127.0.0.1') &&
+      (u.protocol==='http:'||u.protocol==='https:');
+  } catch {return false;}
+}
+function allowedBrowser(req) {
+  if(req.headers.origin!==undefined)return allowedSite(req.headers.origin,true);
+  return allowedSite(req.headers.referer,false);
+}
+function fingerprint(req,salt) {
+  const x=req.headers['x-vercel-forwarded-for']||req.headers['x-forwarded-for'];
+  const ip=typeof x==='string'?x.split(',')[0].trim():'unknown';
+  return createHash('sha256').update(salt).update(':').update(ip||'unknown').digest('hex');
+}
+async function quota(base,headers,bucket,hash) {
+  const r=await fetch(base+'/rest/v1/rpc/reserve_gsi_rate_limit',{
+    method:'POST',headers,
+    body:JSON.stringify({p_bucket_type:bucket,p_client_hash:bucket==='client'?hash:null}),
+    signal:AbortSignal.timeout(4000)
+  });
+  if(!r.ok)throw new Error('quota_api_failure');
+  return (await r.json())===true;
+}
+module.exports=async function handler(req,res) {
+  if(req.method!=='POST'){res.setHeader('Allow','POST');return send(res,405,{error:'method_not_allowed'});}
+  const base=process.env.SUPABASE_URL?.replace(/\/$/,'');
+  const secret=process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const token=process.env.GENX_PROXY_TOKEN;
+  if(!base||!secret||!token)return send(res,503,{error:'proxy_not_configured'});
+  const bearer=(req.headers.authorization||'').match(/^Bearer (.+)$/i);
+  if(!(bearer&&timingSafeToken(bearer[1],token))&&!allowedBrowser(req)){
+    return send(res,401,{error:'unauthorized'});
+  }
+  const input=req.body;
+  if(!input||typeof input!=='object'||Array.isArray(input))return send(res,400,{error:'invalid_payload'});
+  const genes=input.genotypes;
+  if(!genes||typeof genes!=='object'||Array.isArray(genes))return send(res,400,{error:'invalid_genotypes'});
+  const names=Object.keys(genes).sort();
+  if(!names.length||names.length>25)return send(res,400,{error:'invalid_genotypes'});
+  const normalized={};
+  for(const gene of names) {
+    const a=genes[gene];
+    if(!GENE.test(gene)||!Array.isArray(a)||a.length!==2||
+      a.some(v=>typeof v!=='string'||!v.length||v.length>32)){
+      return send(res,400,{error:'invalid_genotypes'});
+    }
+    normalized[gene]=a;
+  }
+  const s=input.sources===undefined?['cpic','dpwg','fda']:input.sources;
+  if(!Array.isArray(s)||!s.length||s.length>3||
+     s.some(v=>typeof v!=='string'||!ALLOWED_SOURCES.has(v))){
+    return send(res,400,{error:'invalid_sources'});
+  }
+  const sources=[...new Set(s)].sort();
+  const canonical=JSON.stringify({genotypes:normalized,sources});
+  if(canonical.length>12000)return send(res,413,{error:'payload_too_large'});
+  const id=createHash('sha256').update(canonical).digest('hex');
+  const endpoint=base+'/rest/v1/gsi_cache';
+  const headers={apikey:secret,Authorization:'Bearer '+secret,'Content-Type':'application/json'};
+  try {
+    if(!await quota(base,headers,'client',fingerprint(req,token))){
+      res.setHeader('Retry-After','60');
+      return send(res,429,{error:'client_rate_limit'});
+    }
+    const cached=await fetch(endpoint+'?id=eq.'+id+'&expires_at=gt.'+
+      encodeURIComponent(new Date().toISOString())+'&select=response_payload',{
+      headers,signal:AbortSignal.timeout(4000)
+    });
+    if(!cached.ok)throw new Error('cache_read_failure');
+    const rows=await cached.json();
+    if(Array.isArray(rows)&&rows.length)return send(res,200,{source:'cache',data:rows[0].response_payload});
+    if(!await quota(base,headers,'upstream',null)){
+      res.setHeader('Retry-After','1');
+      return send(res,429,{error:'upstream_rate_limit'});
+    }
+    const upstream=await fetch('https://api.clinpgx.org/v1/site/gsi?view=most&sources='+
+      encodeURIComponent(sources.join(',')),{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(normalized),signal:AbortSignal.timeout(9000)
+    });
+    if(!upstream.ok)return send(res,502,{error:'upstream_unavailable',status:upstream.status});
+    const result=await upstream.json();
+    const saved=await fetch(endpoint+'?on_conflict=id',{
+      method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({id,genotype_payload:normalized,response_payload:result,
+        expires_at:new Date(Date.now()+86400000).toISOString()}),
+      signal:AbortSignal.timeout(4000)
+    });
+    if(!saved.ok)throw new Error('cache_write_failure');
+    return send(res,200,{source:'upstream',data:result});
+  } catch {return send(res,503,{error:'proxy_temporarily_unavailable'});}
 };
