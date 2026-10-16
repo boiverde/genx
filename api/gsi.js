@@ -77,7 +77,10 @@ module.exports=async function handler(req,res) {
     return send(res,400,{error:'invalid_sources'});
   }
   const sources=[...new Set(s)].sort();
-  const canonical=JSON.stringify({genotypes:normalized,sources});
+  const comedications=Array.isArray(input.comedications)
+    ? [...new Set(input.comedications.filter(c=>typeof c==='string'&&c.length<=40))].sort()
+    : [];
+  const canonical=JSON.stringify({genotypes:normalized,comedications,sources});
   if(canonical.length>12000)return send(res,413,{error:'payload_too_large'});
   const id=createHash('sha256').update(canonical).digest('hex');
   const endpoint=base+'/rest/v1/gsi_cache';
@@ -105,9 +108,16 @@ module.exports=async function handler(req,res) {
     });
     if(!upstream.ok)return send(res,502,{error:'upstream_unavailable',status:upstream.status});
     const result=gsiData(await upstream.json());
+    // Se houver inibidores de CYP2D6, registra fenoconversao clinica
+    const has2D6Inhibitor = comedications.some(c=>['fluoxetine','paroxetine','bupropion'].includes(c.toLowerCase()));
+    if(has2D6Inhibitor && result && result.phenotypes && result.phenotypes.CYP2D6) {
+      result.phenotypesOriginal = { ...result.phenotypes };
+      result.phenotypes.CYP2D6 = "Poor Metabolizer (AS: 0.0) [Fenoconvertido por inibidor]";
+      result.phenoconversionDrugs = comedications;
+    }
     const saved=await fetch(endpoint+'?on_conflict=id',{
       method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify({id,genotype_payload:normalized,response_payload:result,
+      body:JSON.stringify({id,genotype_payload:{genotypes:normalized,comedications},response_payload:result,
         expires_at:new Date(Date.now()+86400000).toISOString()}),
       signal:AbortSignal.timeout(4000)
     });

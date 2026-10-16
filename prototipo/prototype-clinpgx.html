@@ -114,6 +114,71 @@
       color: var(--status-warning);
     }
 
+    /* Gate G0: Regulatory & Demonstrative Clinical Disclaimer Banner */
+    .regulatory-banner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 18px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(180, 83, 9, 0.1));
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-left: 5px solid var(--status-warning);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    .regulatory-banner-icon {
+      font-size: 1.6rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .regulatory-banner-text {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: #FDE68A;
+    }
+
+    .regulatory-banner-text strong {
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+
+    .regulatory-banner-tags {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .reg-tag {
+      font-size: 0.7rem;
+      padding: 1px 7px;
+      border-radius: 4px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #FCD34D;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    /* Offline fallback notice banner (F02 / F12) */
+    .offline-notice-banner {
+      display: none;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-left: 4px solid var(--status-warning);
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: #FDE68A;
+    }
+
     h1 {
       font-size: 1.65rem;
       font-weight: 700;
@@ -815,6 +880,20 @@
 <body>
 
 <div class="container">
+  <!-- Gate G0: Regulatory & Demonstrative Clinical Disclaimer -->
+  <div class="regulatory-banner" role="alert">
+    <div class="regulatory-banner-icon">⚠️</div>
+    <div class="regulatory-banner-text">
+      <div><strong>AMBIENTE DEMONSTRATIVO &amp; PESQUISA FARMACOGENÔMICA</strong>: Este sistema opera exclusivamente com perfis genômicos fictícios e dados sintéticos para fins de pesquisa, ensino e validação técnica da arquitetura de apoio à decisão clínica. <strong>Não constitui Software as a Medical Device (SaMD) certificado pela Anvisa</strong>, nem deve ser empregado para diagnóstico, conduta terapêutica ou prescrição em pacientes reais.</div>
+      <div class="regulatory-banner-tags">
+        <span class="reg-tag">RDC Anvisa nº 657/2022</span>
+        <span class="reg-tag">Resolução CFM nº 2.454/2026</span>
+        <span class="reg-tag">LGPD Lei nº 13.709/2018</span>
+        <span class="reg-tag">HL7 FHIR Genomics v4.0.1</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Header -->
   <header>
     <div class="header-left">
@@ -974,6 +1053,15 @@
         </div>
       </div>
 
+      <!-- Offline Fallback Partial Coverage Banner (F02 & F12) -->
+      <div id="offline-fallback-notice" class="offline-notice-banner">
+        <span style="font-size: 1.3rem; line-height: 1;">⚠️</span>
+        <div>
+          <strong style="color: #FFFFFF;">Modo Fallback de Referência Offline (CPIC Regras Locais - Cobertura Parcial):</strong>
+          O proxy online GENX não respondeu. A avaliação atual foi gerada localmente pelo motor de regras CPIC prioritárias (Codeína, Tramadol, Clopidogrel, Sinvastatina, Fluorouracil, Abacavir, Alopurinol e Carbamazepina). Para a varredura completa dos 141 fármacos com integrações dinâmicas FDA e DPWG, certifique-se de que a API GENX esteja online.
+        </div>
+      </div>
+
       <!-- Filter and Tabs Bar -->
       <div class="results-filter-bar">
         <div class="search-box-wrapper">
@@ -1104,51 +1192,138 @@ const ACTIVITY_SCORES = {
   TPMT: { "*1": 1.0, "*2": 0.0, "*3A": 0.0, "*3B": 0.0, "*3C": 0.0 }
 };
 
-// Pure Phenotype Calculator
-function computeLocalPhenotype(gene, a1, a2) {
-  const scores = ACTIVITY_SCORES[gene] || {};
-  const s1 = scores[a1] !== undefined ? scores[a1] : 1.0;
-  const s2 = scores[a2] !== undefined ? scores[a2] : 1.0;
-  const total = parseFloat((s1 + s2).toFixed(2));
-
-  if (gene === "CYP2D6") {
-    if (total === 0.0) return { pheno: "Poor Metabolizer", score: total, asText: `AS: ${total}` };
-    if (total <= 1.0) return { pheno: "Intermediate Metabolizer", score: total, asText: `AS: ${total}` };
-    if (total <= 2.25) return { pheno: "Normal Metabolizer", score: total, asText: `AS: ${total}` };
-    return { pheno: "Ultrarapid Metabolizer", score: total, asText: `AS: ${total}` };
-  }
-
-  if (gene === "CYP2C19") {
-    const isGain1 = a1 === "*17", isGain2 = a2 === "*17";
-    const isLoss1 = a1 === "*2" || a1 === "*3", isLoss2 = a2 === "*2" || a2 === "*3";
-    if (isGain1 && isGain2) return { pheno: "Ultrarapid Metabolizer", score: total };
-    if ((isGain1 && !isLoss2) || (isGain2 && !isLoss1)) return { pheno: "Rapid Metabolizer", score: total };
-    if (isLoss1 && isLoss2) return { pheno: "Poor Metabolizer", score: total };
-    if (isLoss1 || isLoss2) return { pheno: "Intermediate Metabolizer", score: total };
-    return { pheno: "Normal Metabolizer", score: total };
-  }
-
-  if (gene === "SLCO1B1") {
-    if (total === 2.0) return { pheno: "Normal Function", score: total };
-    if (total === 1.0) return { pheno: "Decreased Function", score: total };
-    return { pheno: "Poor Function", score: total };
-  }
-
-  if (gene === "DPYD") {
-    if (total === 2.0) return { pheno: "Normal Metabolizer", score: total };
-    if (total >= 1.0) return { pheno: "Intermediate Metabolizer", score: total };
-    return { pheno: "Poor Metabolizer", score: total };
-  }
-
-  if (gene.startsWith("HLA-")) {
-    if (a1.includes("*") || a2.includes("*")) return { pheno: "Positive (High Risk)", score: 1.0 };
-    return { pheno: "Negative (Low Risk)", score: 0.0 };
-  }
-
-  return { pheno: total >= 2 ? "Normal Function" : (total === 0 ? "Poor Function" : "Intermediate Function"), score: total };
+// Safe HTML sanitizer (F08)
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-// Master GSI call: same-origin serverless proxy, with local fallback if unavailable.
+// Drug-specific HLA risk interpretation (F04)
+function computeHlaPhenotype(gene, a1, a2) {
+  const alleles = [a1, a2];
+  const risks = [];
+
+  if (gene === "HLA-B") {
+    if (alleles.includes("*57:01")) {
+      risks.push({ drug: "Abacavir", risk: "Hipersensibilidade grave e potencialmente fatal (HSR)" });
+    }
+    if (alleles.includes("*58:01")) {
+      risks.push({ drug: "Alopurinol", risk: "Síndrome de Stevens-Johnson / NET (SCAR)" });
+    }
+    if (alleles.includes("*15:02")) {
+      risks.push({ drug: "Carbamazepina/Fenitoína", risk: "Síndrome de Stevens-Johnson / NET" });
+    }
+  } else if (gene === "HLA-A") {
+    if (alleles.includes("*31:01")) {
+      risks.push({ drug: "Carbamazepina", risk: "Reações cutâneas graves (DRESS / SJS / NET)" });
+    }
+  }
+
+  if (risks.length > 0) {
+    const drugNames = risks.map(r => r.drug).join(", ");
+    return {
+      pheno: `Positivo (Alto Risco p/ ${drugNames})`,
+      score: 1.0,
+      asText: "Positivo",
+      isHlaPositive: true,
+      risks: risks
+    };
+  }
+
+  const isExplicitNegative = alleles.every(a => a === "Negative" || a === "Negativo");
+  return {
+    pheno: isExplicitNegative ? "Negativo (Risco Padrão)" : "Negativo / Alelos Não de Risco Primário",
+    score: 0.0,
+    asText: "Negativo",
+    isHlaPositive: false,
+    risks: []
+  };
+}
+
+// Pure Phenotype Calculator with Unknown Allele Fail-Safe (F01)
+function computeLocalPhenotype(gene, a1, a2) {
+  // HLA Gene Family: use drug-specific interpretation (F04)
+  if (gene.startsWith("HLA-")) {
+    return computeHlaPhenotype(gene, a1, a2);
+  }
+
+  const scores = ACTIVITY_SCORES[gene];
+
+  // If gene has defined activity score mapping
+  if (scores) {
+    const s1Known = scores[a1] !== undefined;
+    const s2Known = scores[a2] !== undefined;
+
+    // Fail-safe: Never fallback to 1.0 (Normal) for unmapped alleles (F01)
+    if (!s1Known || !s2Known) {
+      const unknown = [];
+      if (!s1Known) unknown.push(a1);
+      if (!s2Known) unknown.push(a2);
+      return {
+        pheno: "Indeterminado / Variante Não Mapeada",
+        score: null,
+        asText: "Indeterminado",
+        isIndeterminate: true,
+        warning: `Alelo(s) [${unknown.join(", ")}] sem escore de atividade cadastrado. Requer interpretação e sequenciamento clínico.`
+      };
+    }
+
+    const s1 = scores[a1];
+    const s2 = scores[a2];
+    const total = parseFloat((s1 + s2).toFixed(2));
+
+    if (gene === "CYP2D6") {
+      if (total === 0.0) return { pheno: "Poor Metabolizer", score: total, asText: `AS: ${total}` };
+      if (total <= 1.0) return { pheno: "Intermediate Metabolizer", score: total, asText: `AS: ${total}` };
+      if (total <= 2.25) return { pheno: "Normal Metabolizer", score: total, asText: `AS: ${total}` };
+      return { pheno: "Ultrarapid Metabolizer", score: total, asText: `AS: ${total}` };
+    }
+
+    if (gene === "CYP2C19") {
+      const isGain1 = a1 === "*17", isGain2 = a2 === "*17";
+      const isLoss1 = ["*2", "*3", "*4"].includes(a1), isLoss2 = ["*2", "*3", "*4"].includes(a2);
+      if (isGain1 && isGain2) return { pheno: "Ultrarapid Metabolizer", score: total, asText: `AS: ${total}` };
+      if ((isGain1 && !isLoss2) || (isGain2 && !isLoss1)) return { pheno: "Rapid Metabolizer", score: total, asText: `AS: ${total}` };
+      if (isLoss1 && isLoss2) return { pheno: "Poor Metabolizer", score: total, asText: `AS: ${total}` };
+      if (isLoss1 || isLoss2) return { pheno: "Intermediate Metabolizer", score: total, asText: `AS: ${total}` };
+      return { pheno: "Normal Metabolizer", score: total, asText: `AS: ${total}` };
+    }
+
+    if (gene === "SLCO1B1") {
+      if (total === 2.0) return { pheno: "Normal Function", score: total, asText: `AS: ${total}` };
+      if (total === 1.0) return { pheno: "Decreased Function", score: total, asText: `AS: ${total}` };
+      return { pheno: "Poor Function", score: total, asText: `AS: ${total}` };
+    }
+
+    if (gene === "DPYD") {
+      if (total === 2.0) return { pheno: "Normal Metabolizer", score: total, asText: `AS: ${total}` };
+      if (total >= 1.0) return { pheno: "Intermediate Metabolizer", score: total, asText: `AS: ${total}` };
+      return { pheno: "Poor Metabolizer", score: total, asText: `AS: ${total}` };
+    }
+
+    if (gene === "TPMT") {
+      if (total === 2.0) return { pheno: "Normal Metabolizer", score: total, asText: `AS: ${total}` };
+      if (total === 1.0) return { pheno: "Intermediate Metabolizer", score: total, asText: `AS: ${total}` };
+      return { pheno: "Poor Metabolizer", score: total, asText: `AS: ${total}` };
+    }
+  }
+
+  // Fallback for non-scored genes (VKORC1, G6PD, etc.)
+  const hasAbnormal = (a1 && a1 !== "Normal" && a1 !== "*1" && !a1.includes("Normal") && a1 !== "G/G") ||
+                      (a2 && a2 !== "Normal" && a2 !== "*1" && !a2.includes("Normal") && a2 !== "G/G");
+  return {
+    pheno: hasAbnormal ? "Variante Presente / Atenção Clínica" : "Genótipo Selvagem / Função Típica",
+    score: null,
+    asText: ""
+  };
+}
+
+// Master GSI call: transmits genotypes, comedications (F03) and sources.
 async function fetchGsiEvaluation(patientGenotypes, comedications = [], sources = ["cpic", "dpwg", "fda"]) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 12000);
@@ -1156,7 +1331,7 @@ async function fetchGsiEvaluation(patientGenotypes, comedications = [], sources 
     const res = await fetch("/api/gsi", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ genotypes: patientGenotypes, sources }),
+      body: JSON.stringify({ genotypes: patientGenotypes, comedications, sources }),
       signal: controller.signal
     });
     if (!res.ok) throw new Error("GENX proxy HTTP " + res.status);
@@ -1173,7 +1348,7 @@ async function fetchGsiEvaluation(patientGenotypes, comedications = [], sources 
   }
 }
 
-// Local Fallback Engine
+// Local Fallback Engine (F02 & F12)
 function runLocalFallbackEngine(patientGenotypes, comedications) {
   const phenotypes = {};
   for (const [gene, alleles] of Object.entries(patientGenotypes)) {
@@ -1286,6 +1461,83 @@ function generateLocalDrugRecommendations(phenotypes) {
         }]
       }
     };
+  }
+
+  // Drug-Specific HLA mappings (F04)
+  if (phenotypes["HLA-B"]) {
+    const hlaB = phenotypes["HLA-B"];
+    if (hlaB.includes("Abacavir") || hlaB.includes("*57:01")) {
+      drugs["abacavir"] = {
+        cpic: {
+          annotations: [{
+            name: "Annotation of CPIC Guideline for Abacavir and HLA-B",
+            source: "Clinical Pharmacogenetics Implementation Consortium",
+            notActionable: false,
+            description: "CONTRAINDICAÇÃO ABSOLUTA. Portador de HLA-B*57:01 apresenta alto risco de reação de hipersensibilidade sistêmica grave e potencialmente fatal. Não prescrever abacavir.",
+            genotypes: { "HLA-B": hlaB }
+          }]
+        },
+        fda: {
+          annotations: [{
+            name: "FDA Black Box Warning for Abacavir",
+            source: "FDA",
+            notActionable: false,
+            description: "Hipersensibilidade fatal associada ao alelo HLA-B*57:01. Triagem genética prévia mandatória."
+          }]
+        }
+      };
+    }
+    if (hlaB.includes("Alopurinol") || hlaB.includes("*58:01")) {
+      drugs["allopurinol"] = {
+        cpic: {
+          annotations: [{
+            name: "Annotation of CPIC Guideline for Allopurinol and HLA-B",
+            source: "Clinical Pharmacogenetics Implementation Consortium",
+            notActionable: false,
+            description: "CONTRAINDICAÇÃO. Portador de HLA-B*58:01 apresenta alto risco de Síndrome de Stevens-Johnson / NET. Prescrever Febuxostate como alternativa.",
+            genotypes: { "HLA-B": hlaB }
+          }]
+        }
+      };
+    }
+    if (hlaB.includes("Carbamazepina") || hlaB.includes("*15:02")) {
+      drugs["carbamazepine"] = {
+        cpic: {
+          annotations: [{
+            name: "Annotation of CPIC Guideline for Carbamazepine and HLA-B",
+            source: "Clinical Pharmacogenetics Implementation Consortium",
+            notActionable: false,
+            description: "CONTRAINDICAÇÃO ABSOLUTA. Portador de HLA-B*15:02 apresenta risco extremo de Síndrome de Stevens-Johnson / NET. Prescrever anticonvulsivante alternativo.",
+            genotypes: { "HLA-B": hlaB }
+          }]
+        },
+        fda: {
+          annotations: [{
+            name: "FDA Black Box Warning for Carbamazepine",
+            source: "FDA",
+            notActionable: false,
+            description: "Risco de reações cutâneas graves fatais em portadores de HLA-B*15:02."
+          }]
+        }
+      };
+    }
+  }
+
+  if (phenotypes["HLA-A"]) {
+    const hlaA = phenotypes["HLA-A"];
+    if (hlaA.includes("Carbamazepina") || hlaA.includes("*31:01")) {
+      drugs["carbamazepine"] = drugs["carbamazepine"] || {
+        cpic: {
+          annotations: [{
+            name: "Annotation of CPIC Guideline for Carbamazepine and HLA-A",
+            source: "Clinical Pharmacogenetics Implementation Consortium",
+            notActionable: false,
+            description: "EVITAR carbamazepina se alternativas estiverem disponíveis. Portador de HLA-A*31:01 possui risco significativamente elevado de hipersensibilidade grave (DRESS/SJS/NET).",
+            genotypes: { "HLA-A": hlaA }
+          }]
+        }
+      };
+    }
   }
 
   return drugs;
@@ -1514,14 +1766,17 @@ async function runGsiPipeline() {
   const result = await fetchGsiEvaluation(patientProfile, activeComedications, sources);
   btn.innerHTML = `<span>⚡ Processar Avaliação Farmacogenômica (GSI)</span>`;
 
-  // Update Status Badge
+  // Update Status Badge and Offline Notice Banner (F02 & F12)
   const badge = document.getElementById("api-status-badge");
+  const offlineNotice = document.getElementById("offline-fallback-notice");
   if (result.isLiveApi) {
     badge.className = "badge-engine";
     badge.textContent = "● Motor GSI Online (Proxy GENX)";
+    if (offlineNotice) offlineNotice.style.display = "none";
   } else {
     badge.className = "badge-engine offline";
-    badge.textContent = "● Motor Local (Estimativa Offline)";
+    badge.textContent = "● Modo Fallback de Referência Offline (CPIC Regras Locais - Cobertura Parcial)";
+    if (offlineNotice) offlineNotice.style.display = "flex";
   }
 
   currentGsiData = result.data;
@@ -1539,15 +1794,19 @@ function renderResultsView() {
     const al = patientProfile["CYP2D6"];
     const phenoObj = computeLocalPhenotype("CYP2D6", al[0], al[1]);
     const score = phenoObj.score;
-    gaugeText.textContent = `AS: ${score.toFixed(2)} (${phenoObj.pheno})`;
-    
-    // Position pin percentage: 0.0 -> 5%, 1.0 -> 37.5%, 2.0 -> 62.5%, 3.0+ -> 90%
-    let leftPercent = 5;
-    if (score === 0.0) leftPercent = 5;
-    else if (score <= 1.0) leftPercent = 25 + (score / 1.0) * 20;
-    else if (score <= 2.25) leftPercent = 50 + ((score - 1.0) / 1.25) * 20;
-    else leftPercent = 75 + Math.min(20, ((score - 2.25) / 1.0) * 15);
-    gaugePin.style.left = leftPercent + "%";
+    if (score !== null && score !== undefined) {
+      gaugeText.textContent = `AS: ${score.toFixed(2)} (${phenoObj.pheno})`;
+      // Position pin percentage: 0.0 -> 5%, 1.0 -> 37.5%, 2.0 -> 62.5%, 3.0+ -> 90%
+      let leftPercent = 5;
+      if (score === 0.0) leftPercent = 5;
+      else if (score <= 1.0) leftPercent = 25 + (score / 1.0) * 20;
+      else if (score <= 2.25) leftPercent = 50 + ((score - 1.0) / 1.25) * 20;
+      else leftPercent = 75 + Math.min(20, ((score - 2.25) / 1.0) * 15);
+      gaugePin.style.left = leftPercent + "%";
+    } else {
+      gaugeText.textContent = `${phenoObj.pheno}`;
+      gaugePin.style.left = "50%";
+    }
   } else {
     gaugeText.textContent = "CYP2D6 Não Configurado";
     gaugePin.style.left = "50%";
@@ -1561,7 +1820,7 @@ function renderResultsView() {
   Object.keys(phenos).forEach(g => {
     const chip = document.createElement("div");
     chip.className = "pheno-chip";
-    chip.innerHTML = `<strong>${g}:</strong> <span>${phenos[g]}</span>`;
+    chip.innerHTML = `<strong>${escapeHtml(g)}:</strong> <span>${escapeHtml(phenos[g])}</span>`;
     phenoContainer.appendChild(chip);
   });
 
@@ -1617,25 +1876,32 @@ function renderResultsView() {
 
     const severity = isActionable ? (mainAnnot?.description?.toLowerCase().includes("evitar") || mainAnnot?.description?.toLowerCase().includes("contraindicação") ? "danger" : "warning") : "safe";
 
+    // Sanitized values (F08)
+    const safeDrugKey = escapeHtml(drugKey.toUpperCase());
+    const safeDesc = escapeHtml(mainAnnot?.description || "Recomendação clínica conforme bula do fabricante.");
+    const safeSourceLabel = escapeHtml(sourceLabel);
+    const safeName = escapeHtml(mainAnnot?.name || "Diretriz Farmacogenômica");
+    const safeGeno = mainAnnot?.genotypes ? escapeHtml(Object.entries(mainAnnot.genotypes).map(([g, v]) => `${g}: ${v}`).join(", ")) : "";
+
     const card = document.createElement("div");
     card.className = `drug-result-card ${severity}`;
     card.innerHTML = `
       <div class="drug-card-top">
         <div class="drug-name-header">
-          <span>💊 ${drugKey.toUpperCase()}</span>
+          <span>💊 ${safeDrugKey}</span>
           <span class="action-badge ${severity}">
             ${severity === "danger" ? "🚨 Ação Crítica" : (severity === "warning" ? "⚠️ Ajuste de Dose" : "✅ Uso Padrão")}
           </span>
         </div>
-        <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 600;">Fonte: ${sourceLabel}</span>
+        <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 600;">Fonte: ${safeSourceLabel}</span>
       </div>
       <div class="drug-card-body">
-        <p>${mainAnnot?.description || "Recomendação clínica conforme bula do fabricante."}</p>
-        ${mainAnnot?.genotypes ? `<p style="font-size: 0.78rem; color: var(--text-dim);">Genótipos: ${Object.entries(mainAnnot.genotypes).map(([g, v]) => `${g}: ${v}`).join(", ")}</p>` : ''}
+        <p>${safeDesc}</p>
+        ${safeGeno ? `<p style="font-size: 0.78rem; color: var(--text-dim);">Genótipos: ${safeGeno}</p>` : ''}
         ${isActionable ? `<div class="drug-card-alt">💡 <strong>Conduta Recomendada:</strong> Avaliar alternativa terapêutica não metabolizada pela mesma via.</div>` : ''}
       </div>
       <div class="drug-card-footer">
-        <span>${mainAnnot?.name || "Diretriz Farmacogenômica"}</span>
+        <span>${safeName}</span>
         <span>${isActionable ? "Requer Atenção Médica" : "Sem Alerta"}</span>
       </div>
     `;
@@ -1902,19 +2168,57 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-export-fhir").addEventListener("click", () => {
     const fhir = {
       resourceType: "Bundle",
+      id: "genx-cdss-genomics-bundle",
       type: "transaction",
       timestamp: new Date().toISOString(),
-      entry: Object.entries(patientProfile).map(([gene, alleles]) => ({
-        resource: {
-          resourceType: "Observation",
-          status: "final",
-          code: { text: `Genotype observation for ${gene}` },
-          valueString: alleles.join("/")
-        }
-      }))
+      entry: Object.entries(patientProfile).map(([gene, alleles]) => {
+        const pheno = computeLocalPhenotype(gene, alleles[0], alleles[1]);
+        return {
+          request: {
+            method: "POST",
+            url: "Observation"
+          },
+          resource: {
+            resourceType: "Observation",
+            status: "final",
+            category: [
+              {
+                coding: [
+                  {
+                    system: "http://terminology.hl7.org/CodeSystem/observation-category",
+                    code: "laboratory",
+                    display: "Laboratory"
+                  }
+                ]
+              }
+            ],
+            code: {
+              coding: [
+                {
+                  system: "http://loinc.org",
+                  code: "84413-4",
+                  display: `Genotype observation for ${gene}`
+                }
+              ],
+              text: `Genotype observation for ${gene}`
+            },
+            subject: {
+              reference: `Patient/${SAVED_PATIENTS[currentPatientKey]?.id || "PAC-DEMO"}`
+            },
+            effectiveDateTime: new Date().toISOString(),
+            valueString: alleles.join("/"),
+            interpretation: [
+              {
+                text: pheno.pheno
+              }
+            ],
+            note: pheno.warning ? [{ text: pheno.warning }] : []
+          }
+        };
+      })
     };
     navigator.clipboard.writeText(JSON.stringify(fhir, null, 2)).then(() => {
-      alert("Payload HL7 FHIR (Genomic Bundle) copiado com sucesso!");
+      alert("Payload HL7 FHIR (Genomic Transaction Bundle v4.0.1) copiado com sucesso!");
     }).catch(() => {
       prompt("Copie o payload FHIR abaixo:", JSON.stringify(fhir, null, 2));
     });

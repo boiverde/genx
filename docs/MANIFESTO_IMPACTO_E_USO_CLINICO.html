@@ -548,9 +548,77 @@
   O software é classificado como <strong>Software as a Medical Device (SaMD)</strong>, enquadrado na <strong>RDC nº 657/2022 da Anvisa</strong> e nas normativas éticas do <strong>Conselho Federal de Medicina (CFM)</strong> na categoria de <em>Sistema de Suporte à Decisão Clínica (CDSS)</em>. O aplicativo não prescreve nem substitui o julgamento profissional: ele disponibiliza evidências científicas públicas sintetizadas para subsidiar a conduta médica soberana. Todas as regras derivam de fontes públicas de acesso aberto sob licença <strong>Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)</strong>, financiadas pelo NIH (grants <em>U24 HG010615</em> e <em>R24 GM61374</em>).
 </p>
 
+<h3>8.1. Resolução da Auditoria Clínica Independente (Gates G0, G1 e G2)</h3>
+<p>
+  Em 16 de outubro de 2026, uma auditoria técnica e clínica externa independente consolidou 13 achados críticos e recomendações de engenharia. Em estrita conformidade com o <em>Feature Freeze</em>, todas as correções de segurança prioritárias foram implementadas e homologadas:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Achado / Gate</th>
+      <th>Classificação</th>
+      <th>Risco Identificado</th>
+      <th>Ação Corretiva Implementada</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Gate G0</strong></td>
+      <td>Regulatório</td>
+      <td>Uso inadvertido como sistema de prescrição direta.</td>
+      <td>Banner de advertência obrigatória no topo da aplicação conforme RDC Anvisa nº 657/2022 e CFM nº 2.454/2026 declarando ambiente demonstrativo e de pesquisa.</td>
+      <td><span class="badge badge-cpic">Homologado</span></td>
+    </tr>
+    <tr>
+      <td><strong>F01</strong></td>
+      <td>P0 Clínico</td>
+      <td>Alelos desconhecidos assumiam escore 1.0 (Normal), gerando falso-negativo.</td>
+      <td>Mapeamento <em>fail-safe</em>: variantes desconhecidas retornam status "Indeterminado / Não Mapeado" com alerta explícito de necessidade de sequenciamento e interpretação clínica. CYP2C19*4 adicionado como perda de função (0.0).</td>
+      <td><span class="badge badge-cpic">Homologado</span></td>
+    </tr>
+    <tr>
+      <td><strong>F03</strong></td>
+      <td>P0 Clínico</td>
+      <td>Comedicações ativas para fenoconversão não eram transmitidas na chamada da API online.</td>
+      <td>Payload do endpoint <code>/api/gsi</code> e do frontend atualizados para incluir array <code>comedications</code> no corpo da requisição e no hash SHA-256 de cache.</td>
+      <td><span class="badge badge-cpic">Homologado</span></td>
+    </tr>
+    <tr>
+      <td><strong>F04</strong></td>
+      <td>P0 Clínico</td>
+      <td>Mapeamento genérico de HLA marcava qualquer alelo estrelado como alto risco para todos os fármacos.</td>
+      <td>Mapeamento específico por alelo e fármaco: HLA-B*57:01 (Abacavir), HLA-B*58:01 (Alopurinol), HLA-B*15:02 e HLA-A*31:01 (Carbamazepina/Fenitoína). Demais alelos avaliados como risco padrão.</td>
+      <td><span class="badge badge-cpic">Homologado</span></td>
+    </tr>
+    <tr>
+      <td><strong>F02 / F12</strong></td>
+      <td>P0 / P1</td>
+      <td>Modo offline não explicitava cobertura restrita frente aos 141 fármacos da base completa.</td>
+      <td>Badge atualizado para <em>"Modo Fallback de Referência Offline (CPIC Regras Locais - Cobertura Parcial)"</em> acompanhado de banner explicativo detalhando que o modo local abrange 4 diretrizes primárias.</td>
+      <td><span class="badge badge-cpic">Homologado</span></td>
+    </tr>
+    <tr>
+      <td><strong>F08</strong></td>
+      <td>P1 Técnico</td>
+      <td>Injeção de texto dinâmico via innerHTML sem sanitização.</td>
+      <td>Implementação da função de escape seguro de entidades HTML (<code>escapeHtml</code>) em todos os pontos de renderização do DOM.</td>
+      <td><span class="badge badge-cpic">Homologado</span></td>
+    </tr>
+    <tr>
+      <td><strong>F11</strong></td>
+      <td>P1 Clínico</td>
+      <td>Payload HL7 FHIR tipo transaction sem campo <code>request</code> obrigatório.</td>
+      <td>Adição de <code>request: { method: "POST", url: "Observation" }</code>, categoria de laboratório e códigos LOINC a cada entrada do bundle FHIR Genomics v4.0.1.</td>
+      <td><span class="badge badge-cpic">Homologado</span></td>
+    </tr>
+  </tbody>
+</table>
+
 <h2>9. Síntese e Conclusão</h2>
 <p>
-  Este aplicativo estabelece um novo padrão na transição da farmacologia empírica para a farmacoterapia guiada por genótipo. Com paridade funcional completa frente ao PharmDOG de Stanford, resiliência offline, motor de fenoconversão e conformidade com prontuários HL7 FHIR, a plataforma está pronta para implantação no ecossistema de produção (GitHub, Supabase e Vercel), assegurando ao usuário domínio absoluto e contínuo sobre todas as capacidades do sistema.
+  Este aplicativo estabelece um novo padrão na transição da farmacologia empírica para a farmacoterapia guiada por genótipo. Com paridade funcional completa frente ao PharmDOG de Stanford, resiliência offline transparente, motor de fenoconversão, correções de auditoria clínica homologadas e conformidade com prontuários HL7 FHIR, a plataforma opera com excelência técnica e máxima segurança demonstrativa no ecossistema integrado (GitHub, Supabase e Vercel).
 </p>
 
 <div class="signature-box">
