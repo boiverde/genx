@@ -8,6 +8,35 @@ function gsiData(result) {
     result.data && typeof result.data === 'object' && !result.drugs
     ? result.data : result;
 }
+
+// Clinical safety gate: the ClinPGx upstream request does not include comedications.
+// Therefore a CYP2D6 inhibitor must never be applied only to the phenotype while
+// leaving unreconciled drug/dose recommendations visible to browsers or partners.
+// Apply this gate to both upstream AND older cached payloads.
+function clinicallySafeResult(result, genotypes, comedications) {
+  const inhibitors = comedications.filter(c =>
+    ['fluoxetine','paroxetine','bupropion'].includes(c.trim().toLowerCase()));
+  if (!genotypes.CYP2D6 || inhibitors.length === 0) return result;
+  const payload = result && typeof result === 'object' && !Array.isArray(result) ? result : {};
+  const original = payload.phenotypesOriginal &&
+    typeof payload.phenotypesOriginal === 'object' ? payload.phenotypesOriginal : payload.phenotypes;
+  const geneticPhenotypes = original && typeof original === 'object' ? { ...original } : {};
+  if (typeof geneticPhenotypes.CYP2D6 === 'string' &&
+      /fenoconvertido/i.test(geneticPhenotypes.CYP2D6)) {
+    // The original phenotype is not recoverable from this historical cache row.
+    geneticPhenotypes.CYP2D6 = 'Fenótipo genético original não confirmado';
+  }
+  return {
+    phenotypes: geneticPhenotypes,
+    phenotypesOriginal: geneticPhenotypes,
+    phenoconversionDrugs: inhibitors,
+    drugs: {},
+    clinicalReviewRequired: true,
+    clinicalReviewCode: 'CYP2D6_PHENOCONVERSION_UNRESOLVED',
+    clinicalReviewMessage: 'Inibidor forte de CYP2D6 selecionado. A API consultada não recebeu as comedicações e as recomendações farmacológicas não foram recalculadas por um motor validado. Não utilizar este resultado para escolher medicamentos ou doses.'
+  };
+}
+
 function send(res,status,value) {
   res.setHeader('Cache-Control','no-store');
   return res.status(status).json(value);
@@ -96,7 +125,7 @@ module.exports=async function handler(req,res) {
     });
     if(!cached.ok)throw new Error('cache_read_failure');
     const rows=await cached.json();
-    if(Array.isArray(rows)&&rows.length)return send(res,200,{source:'cache',data:gsiData(rows[0].response_payload)});
+    if(Array.isArray(rows)&&rows.length)return send(res,200,{source:'cache',data:clinicallySafeResult(gsiData(rows[0].response_payload),normalized,comedications)});
     if(!await quota(base,headers,'upstream',null)){
       res.setHeader('Retry-After','1');
       return send(res,429,{error:'upstream_rate_limit'});
@@ -108,13 +137,6 @@ module.exports=async function handler(req,res) {
     });
     if(!upstream.ok)return send(res,502,{error:'upstream_unavailable',status:upstream.status});
     const result=gsiData(await upstream.json());
-    // Se houver inibidores de CYP2D6, registra fenoconversao clinica
-    const has2D6Inhibitor = comedications.some(c=>['fluoxetine','paroxetine','bupropion'].includes(c.toLowerCase()));
-    if(has2D6Inhibitor && result && result.phenotypes && result.phenotypes.CYP2D6) {
-      result.phenotypesOriginal = { ...result.phenotypes };
-      result.phenotypes.CYP2D6 = "Poor Metabolizer (AS: 0.0) [Fenoconvertido por inibidor]";
-      result.phenoconversionDrugs = comedications;
-    }
     const saved=await fetch(endpoint+'?on_conflict=id',{
       method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({id,genotype_payload:{genotypes:normalized,comedications},response_payload:result,
@@ -122,6 +144,6 @@ module.exports=async function handler(req,res) {
       signal:AbortSignal.timeout(4000)
     });
     if(!saved.ok)throw new Error('cache_write_failure');
-    return send(res,200,{source:'upstream',data:result});
+    return send(res,200,{source:'upstream',data:clinicallySafeResult(result,normalized,comedications)});
   } catch {return send(res,503,{error:'proxy_temporarily_unavailable'});}
 };
