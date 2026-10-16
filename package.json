@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node scripts/serve_prototype.js",
     "test": "node scripts/test_scenarios.js",
-    "pdf": "node scripts/generate_pdf.js"
+    "pdf": "node scripts/generate_pdf.js",
+    "test:clinical": "node --test scripts/test_clinical_safety.js"
   },
   "keywords": [
     "pharmacogenomics",
