@@ -1348,25 +1348,34 @@ async function fetchGsiEvaluation(patientGenotypes, comedications = [], sources 
   }
 }
 
-// Local Fallback Engine (F02 & F12)
-function runLocalFallbackEngine(patientGenotypes, comedications) {
+// Offline reference engine. Unmapped alleles and unresolved CYP2D6
+// inhibitor effects MUST NOT produce any drug/dose recommendation.
+function runLocalFallbackEngine(patientGenotypes, comedications = []) {
   const phenotypes = {};
+  const indeterminateGenes = [];
   for (const [gene, alleles] of Object.entries(patientGenotypes)) {
-    const res = computeLocalPhenotype(gene, alleles[0], alleles[1]);
-    phenotypes[gene] = `${res.pheno}${res.asText ? ` (${res.asText})` : ""}`;
+    const interpretation = computeLocalPhenotype(gene, alleles[0], alleles[1]);
+    phenotypes[gene] = `${interpretation.pheno}${interpretation.asText ? ` (${interpretation.asText})` : ""}`;
+    if (interpretation.isIndeterminate) indeterminateGenes.push(gene);
   }
-
-  const hasStrong2D6Inhibitor = comedications.some(c => ["fluoxetine", "paroxetine", "bupropion"].includes(c));
-  if (hasStrong2D6Inhibitor && phenotypes["CYP2D6"]) {
-    phenotypes["CYP2D6"] = "Poor Metabolizer (AS: 0.0) [Fenoconvertido]";
-  }
-
-  const sampleDrugs = generateLocalDrugRecommendations(phenotypes);
+  const strongInhibitors = comedications.filter(c =>
+    ["fluoxetine", "paroxetine", "bupropion"].includes(String(c).trim().toLowerCase()));
+  const unresolvedDdi = !!patientGenotypes.CYP2D6 && strongInhibitors.length > 0;
+  const clinicalReviewRequired = indeterminateGenes.length > 0 || unresolvedDdi;
+  const clinicalReviewMessage = indeterminateGenes.length > 0
+    ? `Variante sem interpretação confiável: ${indeterminateGenes.join(", ")}. O motor offline não pode recomendar medicamentos ou doses para esta avaliação.`
+    : unresolvedDdi
+      ? "Inibidor forte de CYP2D6 identificado. O cálculo offline não possui reconciliação medicamentosa validada; nenhuma recomendação de dose será emitida."
+      : "";
   return {
     phenotypes,
-    phenotypesOriginal: {},
-    phenoconversionDrugs: hasStrong2D6Inhibitor ? ["Fluoxetina/Paroxetina"] : [],
-    drugs: sampleDrugs
+    phenotypesOriginal: { ...phenotypes },
+    phenoconversionDrugs: strongInhibitors,
+    clinicalReviewRequired,
+    clinicalReviewCode: indeterminateGenes.length > 0 ? "UNMAPPED_ALLELES" :
+      unresolvedDdi ? "CYP2D6_PHENOCONVERSION_UNRESOLVED" : null,
+    clinicalReviewMessage,
+    drugs: clinicalReviewRequired ? {} : generateLocalDrugRecommendations(phenotypes)
   };
 }
 
@@ -1771,7 +1780,9 @@ async function runGsiPipeline() {
   const offlineNotice = document.getElementById("offline-fallback-notice");
   if (result.isLiveApi) {
     badge.className = "badge-engine";
-    badge.textContent = "● Motor GSI Online (Proxy GENX)";
+    badge.textContent = result.data?.clinicalReviewRequired
+      ? "● Proxy GENX — Recomendações Bloqueadas (Revisão Clínica)"
+      : "● Motor GSI Online (Proxy GENX)";
     if (offlineNotice) offlineNotice.style.display = "none";
   } else {
     badge.className = "badge-engine offline";
@@ -1828,6 +1839,9 @@ function renderResultsView() {
   const phenoBanner = document.getElementById("phenoconversion-banner");
   if (currentGsiData.phenoconversionDrugs && currentGsiData.phenoconversionDrugs.length > 0) {
     phenoBanner.style.display = "flex";
+    phenoBanner.textContent = currentGsiData.clinicalReviewRequired
+      ? "⚠️ Inibidor enzimático identificado. Fenoconversão e recomendações farmacológicas não reconciliadas clinicamente."
+      : "⚠️ Possível fenoconversão por comedicação. Interpretar em conjunto com o contexto clínico.";
   } else {
     phenoBanner.style.display = "none";
   }
@@ -1837,6 +1851,25 @@ function renderResultsView() {
   const actionableOnly = document.getElementById("check-actionable-only").checked;
   const cardsContainer = document.getElementById("drug-results-container");
   cardsContainer.innerHTML = "";
+  // P0 safety gate shared by online and offline results. Never render
+  // recommendations from an analysis that requires clinical reconciliation.
+  if (currentGsiData.clinicalReviewRequired === true) {
+    const warning = escapeHtml(currentGsiData.clinicalReviewMessage ||
+      "Interpretação clínica inconclusiva. Nenhuma recomendação de medicamento ou dose está disponível.");
+    cardsContainer.innerHTML = `<div role="alert" class="drug-result-card warning" style="padding:18px">
+      <strong>⚠️ Recomendações bloqueadas — revisão clínica necessária</strong>
+      <p style="margin-top:10px">${warning}</p>
+      <p>Não utilizar este resultado para prescrever ou ajustar doses. Consulte uma diretriz validada e um profissional habilitado.</p>
+    </div>`;
+    ["badge-count-all","badge-count-cpic","badge-count-dpwg","badge-count-fda"].forEach(id => {
+      document.getElementById(id).textContent = "0";
+    });
+    const alertBadge = document.getElementById("alerts-count-badge");
+    alertBadge.style.display = "inline-block";
+    alertBadge.textContent = "Revisão clínica obrigatória";
+    return;
+  }
+
 
   let totalCount = 0, cpicCount = 0, dpwgCount = 0, fdaCount = 0, actionableCount = 0;
 
@@ -2166,6 +2199,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-print").addEventListener("click", () => window.print());
 
   document.getElementById("btn-export-fhir").addEventListener("click", () => {
+    if (currentGsiData?.clinicalReviewRequired) {
+      alert("Exportação clínica bloqueada: interpretação inconclusiva ou fenoconversão não reconciliada.");
+      return;
+    }
     const fhir = {
       resourceType: "Bundle",
       id: "genx-cdss-genomics-bundle",
