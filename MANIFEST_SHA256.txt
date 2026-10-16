@@ -1,0 +1,44 @@
+========================================================================================
+CLINPGX CDSS — MANIFESTO CRIPTOGRÁFICO DE INTEGRIDADE (SHA-256)
+Data: 16 de Outubro de 2026
+========================================================================================
+
+396b75cd248fae7e1e5ebd01041390c1be7fac4657c4f163136cc0ba1e515f13  CLINPGX_PLANO_REA.md
+45f365afe661206fb0ed5d1dcc11c304f802b98d8d8d13eaf062e07f76e25ec7  CLINPGX_REVISAO_FUNCIONAL_E_LACUNAS.md
+719effe8d757b115b2ba48af5e051945e5cd3d571ec2f3f415847dc04117ff6e  CLINPGX_REVISAO_PROFUNDA_E_OTIMIZACOES.md
+f82a85e645d5f1357ec8f892373883dec734bbb11aca5a7c78b1af048c4d7a4e  README.md
+31a8c291f5e8ab03c23cf98e407466bb356a7c826033b78e5a411ee870e63f91  artefatos\api_cache\chemical_codeine.json
+b6df6d78d9ff3fd376418ec457a19c52b99fcf12892d766b0ab2cca180e3d1e9  artefatos\api_cache\compact_genes.json
+e40b46e288b7fafbd3a55ac5a04c3054aece25f44e63b6133aa7b98fe2d0db79  artefatos\api_cache\gene_CYP2C19.json
+a26263e5a663e6a1c7ff4a9994ad0221990fbea135cfcdd576f0994fafd011ba  artefatos\api_cache\gene_CYP2D6.json
+8e3db6df5a36f88c91d979eb523c4f0b2a402732d6c77cf6d21d85a874e75c63  artefatos\api_cache\gene_DPYD.json
+b4ff752eaca21163e5a36e3f496ae54a48e573241e41997263c07a372a4c4fd7  artefatos\api_cache\gene_SLCO1B1.json
+ef6ee2ec8993eacc5aa8806c56a015753ae938e5af886d94255a835dea9990a8  artefatos\api_cache\gsi_options.json
+9531571c267bfe7febaf4e09a7f65cea43b44c63e1a95dfba60a6684d09784ca  artefatos\clinpgx_home.png
+ddef93c6e4a3d53a9d256960503c9ba22fccccd162a7471c4f893aa1a71674b5  artefatos\pharmdog_home.png
+d834d7e19dfd18b37981e302c30a2d8ab6561770bafe8e1a517c083f1d379314  artefatos\prototype_screenshot.png
+5fb7d035d94c9ca7038ce14c88a5cf889019bf8852a49c23ac873feabefcadda  artefatos\prototype_v2_screenshot.png
+ddd8e4f6cc2395a4c6b683d537650d78e11a373d5375051faa24ea13f53f7e73  artefatos\prototype_v3_screenshot.png
+cd54e2322f9a6d1cdc1c2a10187ed6fc69fde05349a95fdbd24ff985c1d302e2  docs\DOSSIE_LEGAL_E_CLINICO_CLINPGX.html
+fbf8677f822b5c4e8ccaf2284c8557dd142f054645ea5571c43db1b2441859d7  docs\DOSSIE_LEGAL_E_CLINICO_CLINPGX.pdf
+d6f0b7c546f234326073be620d01e1179ddcad433700777a7358a3b9f50e2a5e  docs\MANIFESTO_IMPACTO_E_USO_CLINICO.html
+7e3669857739f51d111f201fe8201c6126877aba5b5404d8c19efd335c8693e2  docs\MANIFESTO_IMPACTO_E_USO_CLINICO.pdf
+d6f0c02428e0ceaaa2a4d5fdd7eca549b627124dfffa69e249b73b38da7a71b1  evidencias\clinpgx_home_inspection.json
+ae2c6235638c8b9795a0a436d53fda7645c14880249328cab9cf13d525b027b8  evidencias\pharmdog_bundle.js
+f079626f08a50fd8c4d6f60308f462662cf230c2051fea8612b67584cbaefce2  evidencias\pharmdog_bundle_analysis.json
+e9781a6a01613fe46f5376425282855b5ad1ed0326cec3af01ce148bdd8cbcaf  evidencias\pharmdog_inspection.json
+234e8b749ea5fdcf495d301aaad231bf565094176b11fa7acda7b45bee7ab481  prototipo\LOGIC.md
+8435b8fdeb9791e08276f75aff39d624856a1403261258c7be14dc9aed283471  prototipo\prototype-clinpgx.html
+081332b990c8c94d429cb41e3d5d7dcf8292cd12a28844640b266170d08b82e7  scripts\audit_pharmdog_features.js
+3bdc722eefebcab2e61bed429c855a278ff71aa1d75a5169f932110e16240601  scripts\generate_manifest.js
+5b1145c4079796bc028b9ca9eb2c21285be432a5773e01e8b8ba9b502db94acc  scripts\generate_pdf.js
+ff25f9204f2905f3d1d9efac7bb44e042f02201fe0b604edd75d6b2d5f96adc9  scripts\harvest_clinpgx_api.js
+8f47e42a2ea730879f750b74f89db4b4acbd31822b9ae0cac2687600d2396aa3  scripts\inspect_drug_details.js
+449e4310a41ae029598dc215898d57c22f5d3f6c63396e7ebab5050e1ecdf8d0  scripts\inspect_drugs_page.js
+63bab8d0c1268982a383fc22ea7ba641b410c088f937eaccef2115bb9bec1f9f  scripts\inspect_gsi_fetch.js
+7a1e452cfa7f4925053745ac6eb632a1237bc1a3d831258220ab96c5a372331f  scripts\inspect_phenoconversion.js
+fe3b3c6c727ffac6efb27458efa870d99240f04277101869df67d73f27816424  scripts\inspect_results_ui.js
+0adcd8449bbd5822b27a55ae69c3a5c3b7591bfaea58fe20dce5dc6555bbc1e5  scripts\inspect_storage_vars.js
+e206d16a730defd427793fbf6a8aa3ed0d7478db21496df6dc0fb291ee18c378  scripts\rea_deep_confrontation.js
+7f966bbf2668ca498dc6a4c28581be6475fd2a7a93b662f5d45311cedbe2a26a  scripts\serve_prototype.js
+e2c804c673d441f6c930bf219a8eaf2c088e3ca1ff118411df7faedb583b41a3  scripts\test_scenarios.js

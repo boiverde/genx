@@ -1,0 +1,22 @@
+{
+  "name": "clinpgx-cdss",
+  "version": "1.0.0",
+  "description": "Clinical Pharmacogenomics Decision Support System (CPIC / FDA / DPWG)",
+  "main": "scripts/serve_prototype.js",
+  "scripts": {
+    "start": "node scripts/serve_prototype.js",
+    "test": "node scripts/test_scenarios.js",
+    "pdf": "node scripts/generate_pdf.js"
+  },
+  "keywords": [
+    "pharmacogenomics",
+    "cdss",
+    "cpic",
+    "fhir",
+    "precision-medicine",
+    "clinpgx",
+    "pharmdog"
+  ],
+  "author": "boiverde",
+  "license": "CC-BY-SA-4.0"
+}

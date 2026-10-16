@@ -1,0 +1,69 @@
+{
+  "data": [
+    {
+      "objCls": "Gene",
+      "id": "PA145",
+      "symbol": "DPYD",
+      "name": "dihydropyrimidine dehydrogenase",
+      "alleleFunctionSource": "CPIC",
+      "amp": true,
+      "buildVersion": "GRCh38.p7",
+      "cbStart": "p21.3",
+      "cbStop": "p21.3",
+      "chr": {
+        "objCls": "Chromosome",
+        "id": "PA503",
+        "name": "chr1"
+      },
+      "chrStartPosB37": 97543299,
+      "chrStartPosB38": 97077743,
+      "chrStopPosB37": 98386615,
+      "chrStopPosB38": 97921059,
+      "cpicGene": true,
+      "hasNonStandardHaplotypes": false,
+      "hideHaplotypes": true,
+      "history": [],
+      "pharmVarGene": true,
+      "strand": "minus",
+      "usesStarAlleles": false,
+      "vipCitation": {
+        "id": 15168380,
+        "title": "PharmGKB VIP Summary: DPYD",
+        "_sameAs": "https://api.clinpgx.org/v1/download/file/attachment/DPYD_VIP_Summary.pdf",
+        "authors": [],
+        "crossReferences": [
+          {
+            "id": 1452646258,
+            "resource": "URL",
+            "resourceId": "https://api.clinpgx.org/v1/download/file/attachment/DPYD_VIP_Summary.pdf",
+            "_url": "https://api.clinpgx.org/v1/download/file/attachment/DPYD_VIP_Summary.pdf"
+          }
+        ],
+        "day": -1,
+        "month": -1,
+        "notes": "This document contains text that was found on the PharmGKB VIP page for DPYD prior to Oct 2024.",
+        "objCls": "Literature",
+        "pediatric": false,
+        "pgkbPublication": false,
+        "pubmedMeshTerms": [],
+        "terms": [
+          {
+            "id": 1452267780,
+            "resource": "ClinPGx Tags",
+            "term": "Has PGx",
+            "termId": "pgkbTags:1452267780"
+          }
+        ],
+        "type": "Literature",
+        "year": -1
+      },
+      "vipId": "PA166169426",
+      "vipSummary": {
+        "id": 1448638091,
+        "html": "<p>DPYD is one of the key pharmacogenes involved in the implementation of pharmacogenomics.</p>\n<pre><code>                            - It is involved in guidelines for [fluorouracil](/guidelineAnnotation/PA166122686) and [capecitabine](/guidelineAnnotation/PA166109594) ([go to list of all guidelines with DPYD](/gene/PA145/prescribingInfo)).\n                            - the nomenclature has been set by [PharmVar](https://www.pharmvar.org/gene/DPYD)\n                              - the key variants are tier 1 [allele:DPYD c.1905+1G&gt;A (\\*2A)], [allele:DPYD c.1679T&gt;G (\\*13)], [allele:DPYD c.1129-5923C&gt;G, c.1236G&gt;A (HapB3)], [allele:DPYD c.557A&gt;G], [allele:DPYD c.868A&gt;G], [allele:DPYD c.2279C&gt;T], [allele:DPYD c.2846A&gt;T] , and tier 2 [allele: DPYD c.295_298delTCAT (\\*7)], [allele: DPYD c.703C&gt;T (\\*8)], [allele: DPYD c.1314T&gt;G], [allele: DPYD c.1475C&gt;T], [allele: DPYD c.1774C&gt;T],[allele: DPYD c.2639G&gt;T] [PMID:39032821] [see all alleles on the AMP recommended to test list](/ampAllelesToTest).\n                              - See the [Gene-specific Information Tables](/page/dpydRefMaterials) for Allele Definitions (for which variants comprise which star alleles), Allele function assignments (normal function, no function, decreased or increased function etc) and Diplotype-Phenotype Table (for how the alleles combine to form metabolizer phenotypes for PM, NM, UM)\n</code></pre>\n"
+      },
+      "vipTier": "Tier 1"
+    }
+  ],
+  "status": "success"
+}

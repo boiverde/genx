@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClinPGx CDSS — Sistema Hospitalar de Apoio à Decisão Farmacogenômica (CPIC / FDA / DPWG)</title>
+  <style>
+    :root {
+      --bg-main: #0B0F19;
+      --bg-card: rgba(18, 24, 38, 0.9);
+      --bg-card-hover: rgba(26, 34, 52, 0.98);
+      --bg-input: #151D2F;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: #38BDF8;
+      --text-main: #F1F5F9;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --accent-cyan: #38BDF8;
+      --accent-indigo: #818CF8;
+      --status-safe: #10B981;
+      --status-safe-bg: rgba(16, 185, 129, 0.12);
+      --status-safe-border: rgba(16, 185, 129, 0.35);
+      --status-warning: #F59E0B;
+      --status-warning-bg: rgba(245, 158, 11, 0.12);
+      --status-warning-border: rgba(245, 158, 11, 0.35);
+      --status-danger: #EF4444;
+      --status-danger-bg: rgba(239, 68, 68, 0.14);
+      --status-danger-border: rgba(239, 68, 68, 0.35);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-main);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.06) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(129, 140, 248, 0.06) 0px, transparent 50%);
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      line-height: 1.5;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container { max-width: 1480px; margin: 0 auto; }
+
+    /* Top Bar & Header */
+    header {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-left { max-width: 850px; }
+
+    .badge-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-prototype {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-prototype::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+
+    .badge-engine {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 9999px;
+      color: var(--status-safe);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-engine.offline {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: var(--status-warning);
+    }
+
+    h1 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .header-desc {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* Main Navigation Switcher: Mode Selector */
+    .nav-mode-bar {
+      display: flex;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      margin-bottom: 20px;
+      gap: 6px;
+    }
+
+    .nav-mode-btn {
+      flex: 1;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-mode-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-mode-btn.active {
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.25), rgba(37, 99, 235, 0.25));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Patient Switcher Bar */
+    .patient-switcher-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .patient-info-display {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .patient-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #FFFFFF;
+      font-size: 0.9rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284C7, #2563EB);
+      color: white;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369A1, #1D4ED8);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    /* Layout Grid */
+    .app-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+      .app-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #FFFFFF;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Multi-gene patient panel */
+    .patient-gene-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .gene-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      transition: border-color 0.2s ease;
+    }
+
+    .gene-card:hover {
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .gene-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .gene-symbol-badge {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gene-pheno-tag {
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    .gene-select-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    label.field-lbl {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      background: #0B111E;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    select:focus, input[type="text"]:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+    }
+
+    .btn-remove-gene {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .btn-remove-gene:hover {
+      color: var(--status-danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .add-gene-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    /* Co-medications & Sources options */
+    .options-section {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+
+    .checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      accent-color: var(--accent-cyan);
+      width: 15px;
+      height: 15px;
+    }
+
+    .checkbox-item:hover { color: var(--text-main); }
+
+    /* Results Column & Summary Hero */
+    .summary-hero {
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(129, 140, 248, 0.05));
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .summary-hero h2 {
+      font-size: 1.15rem;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Activity Score Gauge / Visual Ruler */
+    .gauge-wrapper {
+      background: rgba(11, 17, 30, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 14px;
+    }
+
+    .gauge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .gauge-bar-track {
+      height: 12px;
+      background: #1E293B;
+      border-radius: 9999px;
+      overflow: hidden;
+      display: flex;
+      position: relative;
+    }
+
+    .gauge-segment {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .gauge-segment.pm { background: #EF4444; width: 25%; }
+    .gauge-segment.im { background: #F59E0B; width: 25%; }
+    .gauge-segment.nm { background: #10B981; width: 25%; }
+    .gauge-segment.um { background: #818CF8; width: 25%; }
+
+    .gauge-indicator-pin {
+      position: absolute;
+      top: -3px;
+      bottom: -3px;
+      width: 4px;
+      background: #FFFFFF;
+      border-radius: 2px;
+      box-shadow: 0 0 8px #FFFFFF;
+      transition: left 0.4s ease;
+    }
+
+    .gauge-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    .pheno-chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .pheno-chip {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pheno-chip strong { color: #FFFFFF; font-family: var(--font-mono); }
+    .pheno-chip span { color: var(--accent-cyan); }
+
+    .phenoconversion-notice {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      color: var(--status-warning);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Drug filter and search bar */
+    .results-filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .search-box-wrapper {
+      flex: 1;
+      min-width: 260px;
+      position: relative;
+    }
+
+    .search-box-wrapper input {
+      padding-left: 32px;
+    }
+
+    .search-box-wrapper .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    .filter-toggle-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--text-main);
+      cursor: pointer;
+      user-select: none;
+      background: var(--bg-input);
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .filter-toggle-label input { accent-color: var(--accent-cyan); }
+
+    /* Source tabs */
+    .source-tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 16px;
+    }
+
+    .source-tab-btn {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .source-tab-btn:hover { color: var(--text-main); }
+
+    .source-tab-btn.active {
+      color: #FFFFFF;
+      border-bottom-color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .tab-badge {
+      font-size: 0.72rem;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    /* Drug Cards List */
+    .drug-cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 720px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .drug-result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-left: 4px solid var(--status-safe);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      transition: all 0.2s ease;
+    }
+
+    .drug-result-card.danger {
+      border-left-color: var(--status-danger);
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.06), transparent 70%);
+    }
+
+    .drug-result-card.warning {
+      border-left-color: var(--status-warning);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.06), transparent 70%);
+    }
+
+    .drug-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .drug-name-header {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .action-badge.danger {
+      background: var(--status-danger-bg);
+      border: 1px solid var(--status-danger-border);
+      color: var(--status-danger);
+    }
+
+    .action-badge.warning {
+      background: var(--status-warning-bg);
+      border: 1px solid var(--status-warning-border);
+      color: var(--status-warning);
+    }
+
+    .action-badge.safe {
+      background: var(--status-safe-bg);
+      border: 1px solid var(--status-safe-border);
+      color: var(--status-safe);
+    }
+
+    .drug-card-body p {
+      font-size: 0.88rem;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    .drug-card-alt {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      color: var(--accent-cyan);
+      margin-top: 6px;
+    }
+
+    .drug-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    /* Mode Encyclopedia View */
+    .encyclopedia-view {
+      display: none;
+    }
+
+    .encyclopedia-view.active {
+      display: block;
+    }
+
+    .atc-category-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .atc-category-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 6px;
+    }
+
+    .atc-drug-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .drug-pill-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .drug-pill-btn:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    /* Modal / QR Drawer */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-box {
+      background: #111827;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .qr-container {
+      background: #FFFFFF;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      display: inline-block;
+      margin: 16px 0;
+    }
+
+    /* Print Styles */
+    @media print {
+      body { background: #FFFFFF !important; color: #000000 !important; padding: 0 !important; }
+      .header-actions, .add-gene-bar, .btn, .source-tabs, .results-filter-bar, .options-section, .nav-mode-bar, .patient-switcher-bar {
+        display: none !important;
+      }
+      .app-grid { display: block !important; }
+      .card {
+        background: #FFFFFF !important;
+        border: 1px solid #CCCCCC !important;
+        box-shadow: none !important;
+        color: #000000 !important;
+        page-break-inside: avoid;
+        margin-bottom: 15px !important;
+      }
+      .drug-result-card {
+        background: #FFFFFF !important;
+        border: 1px solid #DDDDDD !important;
+        color: #000000 !important;
+        page-break-inside: avoid;
+      }
+      .drug-result-card p, .drug-name-header, .summary-hero h2 { color: #000000 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="badge-bar">
+        <span class="badge-prototype">ClinPGx / PharmDOG — Paridade Funcional 100%</span>
+        <span id="api-status-badge" class="badge-engine">● Motor GSI Online (api.clinpgx.org)</span>
+      </div>
+      <h1>ClinPGx CDSS: Sistema de Decisão Farmacogenômica</h1>
+      <p class="header-desc">
+        Motor de inferência em medicina de precisão compatível com as diretrizes <strong>CPIC, DPWG e FDA</strong>. Suporte a painel genômico de 25 genes, escore de atividade (Gaedigk et al.), fenoconversão e varredura do armário de 141 medicamentos.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button id="btn-quick-scenarios" class="btn btn-secondary">⚡ Casos Rápidos</button>
+      <button id="btn-share-qr" class="btn btn-secondary">📱 Compartilhar / QR Code</button>
+      <button id="btn-print" class="btn btn-secondary">🖨️ Imprimir Laudo</button>
+      <button id="btn-export-fhir" class="btn btn-secondary">📋 HL7 FHIR</button>
+    </div>
+  </header>
+
+  <!-- Navigation Mode Bar: Dual Navigation (Patient Profile vs. Drug Encyclopedia) -->
+  <div class="nav-mode-bar">
+    <button class="nav-mode-btn active" id="tab-mode-patient" onclick="switchMainMode('patient')">
+      <span>👤 Modo Avaliação de Paciente (Painel Multigene)</span>
+    </button>
+    <button class="nav-mode-btn" id="tab-mode-encyclopedia" onclick="switchMainMode('encyclopedia')">
+      <span>📚 Modo Enciclopédia de Fármacos (Consulta por Medicamento)</span>
+    </button>
+  </div>
+
+  <!-- Patient Switcher Bar (Multi-Patient Management) -->
+  <div class="patient-switcher-bar" id="patient-switcher-section">
+    <div class="patient-info-display">
+      <div class="patient-avatar" id="patient-avatar-badge">M</div>
+      <div>
+        <div style="font-weight: 700; color: #FFFFFF;" id="current-patient-name">Dona Maria — 65 anos (Cardiologia)</div>
+        <div style="font-size: 0.75rem; color: var(--text-dim);" id="current-patient-meta">ID: PAC-70412 • Prontuário Digital Ativo</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <select id="select-saved-patient" style="width: 240px; padding: 6px 10px;" onchange="loadSavedPatient(this.value)">
+        <option value="p1">Dona Maria — 65a (Pós-Stent / IAM)</option>
+        <option value="p2">Sr. João — 54a (Oncologia / 5-FU)</option>
+        <option value="p3">Ana Clara — 28a (Lactante / Dor)</option>
+        <option value="new">+ Cadastrar Novo Paciente...</option>
+      </select>
+      <button class="btn btn-secondary" onclick="saveCurrentPatientCustom()" style="padding: 6px 12px;">💾 Salvar</button>
+    </div>
+  </div>
+
+  <!-- MODE 1: PATIENT EVALUATION VIEW -->
+  <div class="app-grid" id="view-mode-patient">
+    <!-- Left Column: Multi-Gene Patient Profile -->
+    <div>
+      <div class="card">
+        <div class="card-title">
+          <span>Painel Genômico do Paciente</span>
+          <span style="font-size: 0.8rem; color: var(--accent-cyan);" id="gene-count-badge">3 genes</span>
+        </div>
+
+        <!-- Add Gene Selector -->
+        <div class="add-gene-bar">
+          <select id="select-new-gene" style="flex: 1;">
+            <!-- Populated via JS -->
+          </select>
+          <button id="btn-add-gene" class="btn btn-primary" style="padding: 8px 12px;">+ Adicionar</button>
+        </div>
+
+        <!-- Dynamic List of Patient's Genes -->
+        <div class="patient-gene-list" id="patient-genes-container">
+          <!-- Rendered via JS -->
+        </div>
+
+        <!-- Co-medications Section (Phenoconversion) -->
+        <div class="options-section">
+          <label class="field-lbl">Comedicações Ativas (Avaliação de Fenoconversão)</label>
+          <div class="checkbox-list">
+            <label class="checkbox-item">
+              <input type="checkbox" value="fluoxetine" class="comed-check">
+              <span>Fluoxetina (Inibidor Forte de CYP2D6)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="paroxetine" class="comed-check">
+              <span>Paroxetina (Inibidor Forte de CYP2D6)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="bupropion" class="comed-check">
+              <span>Bupropiona (Inibidor Forte de CYP2D6)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="omeprazole" class="comed-check">
+              <span>Omeprazol (Substrato/Inibidor Competitivo CYP2C19)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Sources Section -->
+        <div class="options-section">
+          <label class="field-lbl">Consórcios e Fontes Ativas</label>
+          <div style="display: flex; gap: 14px; margin-top: 6px;">
+            <label class="checkbox-item">
+              <input type="checkbox" id="src-cpic" checked>
+              <span>CPIC</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="src-dpwg" checked>
+              <span>DPWG</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="src-fda" checked>
+              <span>FDA</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="btn-run-gsi" class="btn btn-primary" style="width: 100%; margin-top: 18px; padding: 12px;">
+          <span>⚡ Processar Avaliação Farmacogenômica (GSI)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Column: Results & Drug Cabinet Matrix -->
+    <div>
+      <!-- Patient Summary Hero with Activity Score Gauge -->
+      <div class="summary-hero" id="summary-hero">
+        <h2>
+          <span>Perfil Fenotípico Calculado</span>
+          <span id="alerts-count-badge" class="action-badge danger" style="display: none;">3 Alertas</span>
+        </h2>
+
+        <!-- Visual Enzyme Activity Ruler / Gauge -->
+        <div class="gauge-wrapper">
+          <div class="gauge-header">
+            <span>Régua Enzimática (Escore de Atividade de Gaedigk et al. - CYP2D6)</span>
+            <strong id="gauge-score-text" style="color: #FFFFFF; font-family: var(--font-mono);">AS: 1.0 (Intermediário)</strong>
+          </div>
+          <div class="gauge-bar-track">
+            <div class="gauge-segment pm" title="Poor Metabolizer (AS: 0.0)"></div>
+            <div class="gauge-segment im" title="Intermediate Metabolizer (AS: 0.25 - 1.0)"></div>
+            <div class="gauge-segment nm" title="Normal Metabolizer (AS: 1.25 - 2.25)"></div>
+            <div class="gauge-segment um" title="Ultrarapid Metabolizer (AS: > 2.25)"></div>
+            <div class="gauge-indicator-pin" id="gauge-pin" style="left: 37.5%;"></div>
+          </div>
+          <div class="gauge-labels">
+            <span>Lento (0.0)</span>
+            <span>Intermediário (0.5 - 1.0)</span>
+            <span>Normal (1.5 - 2.0)</span>
+            <span>Ultrarrápido (≥ 3.0)</span>
+          </div>
+        </div>
+
+        <div class="pheno-chips-container" id="pheno-chips-container">
+          <!-- Rendered via JS -->
+        </div>
+        <div id="phenoconversion-banner" class="phenoconversion-notice" style="display: none;">
+          <span>⚡ <strong>Fenoconversão Farmacológica Detectada:</strong> O paciente porta inibidores enzimáticos concomitantes que alteram o fenótipo funcional para Poor Metabolizer (PM).</span>
+        </div>
+      </div>
+
+      <!-- Filter and Tabs Bar -->
+      <div class="results-filter-bar">
+        <div class="search-box-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="input-drug-search" placeholder="Filtrar por nome do medicamento (ex: Codeína, Clopidogrel, 5-FU)...">
+        </div>
+        <label class="filter-toggle-label">
+          <input type="checkbox" id="check-actionable-only" checked>
+          <span>Apenas Medicamentos Acionáveis</span>
+        </label>
+      </div>
+
+      <!-- Source Tabs -->
+      <div class="source-tabs">
+        <button class="source-tab-btn active" data-source="ALL">
+          <span>Todos</span>
+          <span class="tab-badge" id="badge-count-all">0</span>
+        </button>
+        <button class="source-tab-btn" data-source="CPIC">
+          <span>CPIC</span>
+          <span class="tab-badge" id="badge-count-cpic">0</span>
+        </button>
+        <button class="source-tab-btn" data-source="DPWG">
+          <span>DPWG</span>
+          <span class="tab-badge" id="badge-count-dpwg">0</span>
+        </button>
+        <button class="source-tab-btn" data-source="FDA">
+          <span>FDA</span>
+          <span class="tab-badge" id="badge-count-fda">0</span>
+        </button>
+      </div>
+
+      <!-- Drug Cards List -->
+      <div class="drug-cards-grid" id="drug-results-container">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE 2: DRUG ENCYCLOPEDIA VIEW -->
+  <div class="encyclopedia-view" id="view-mode-encyclopedia">
+    <div class="card">
+      <div class="card-title">
+        <span>Enciclopédia Farmacogenômica de Fármacos (Catálogo de Diretrizes CPIC / FDA)</span>
+        <span style="font-size: 0.8rem; color: var(--accent-cyan);">141 Medicamentos Catalogados</span>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+        Pesquise qualquer princípio ativo para consultar imediatamente quais genes influenciam sua resposta, os níveis de evidência CPIC e as advertências oficiais da FDA, independentemente do cadastro de um paciente.
+      </p>
+      
+      <div class="search-box-wrapper" style="margin-bottom: 20px;">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="input-encyclopedia-search" placeholder="Digite o nome do medicamento (ex: Codeína, Clopidogrel, Omeprazol, Sinvastatina, Tamoxifeno, Varfarina)..." oninput="filterEncyclopediaDrugs(this.value)">
+      </div>
+
+      <div id="encyclopedia-categories-container">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QR Code & Share Modal -->
+<div id="modal-share" class="modal-overlay">
+  <div class="modal-box">
+    <h3 style="color: #FFFFFF; margin-bottom: 8px;">Compartilhar Perfil Genômico</h3>
+    <p style="font-size: 0.85rem; color: var(--text-muted);">
+      Aponte a câmera do celular para carregar o laudo ou copie o link direto codificado com o perfil do paciente.
+    </p>
+    <div class="qr-container" id="qr-svg-holder">
+      <!-- SVG QR Code rendered via JS -->
+    </div>
+    <div style="margin-top: 10px;">
+      <input type="text" id="share-url-input" readonly style="font-size: 0.75rem; text-align: center; margin-bottom: 12px;">
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button id="btn-copy-share-url" class="btn btn-primary" style="font-size: 0.8rem;">Copiar Link</button>
+        <button id="btn-close-modal" class="btn btn-secondary" style="font-size: 0.8rem;">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- PURE CLINICAL DOMAIN ENGINE & EMBEDDED ONTOLOGY REGISTRY                  -->
+<!-- ========================================================================= -->
+<script id="domain-logic">
+/**
+ * ClinPGx 25 Genes & Alleles Registry
+ */
+const CLINPGX_GENE_REGISTRY = {
+  "CYP2D6": ["*1", "*1x2", "*1x≥3", "*2", "*2x2", "*3", "*4", "*4x2", "*5", "*6", "*9", "*10", "*17", "*29", "*41"],
+  "CYP2C19": ["*1", "*2", "*3", "*4", "*17"],
+  "CYP2C9": ["*1", "*2", "*3", "*5", "*6", "*8", "*11"],
+  "CYP2B6": ["*1", "*4", "*6", "*9", "*18"],
+  "CYP3A4": ["*1", "*1B", "*20", "*22"],
+  "CYP3A5": ["*1", "*3", "*6", "*7"],
+  "SLCO1B1": ["*1", "*5", "*15", "*17", "*37"],
+  "DPYD": ["*1", "*2A", "*13", "rs67376798", "*7", "*8"],
+  "TPMT": ["*1", "*2", "*3A", "*3B", "*3C"],
+  "NUDT15": ["*1", "*2", "*3", "*4", "*5"],
+  "UGT1A1": ["*1", "*6", "*28", "*36", "*37", "*80"],
+  "ABCG2": ["*1", "*2", "rs2231142"],
+  "HLA-A": ["*31:01", "Negative"],
+  "HLA-B": ["*57:01", "*58:01", "*15:02", "Negative"],
+  "VKORC1": ["-1639G>A (AA)", "-1639G>A (GA)", "-1639G>A (GG)"],
+  "CYP4F2": ["*1", "*3"],
+  "G6PD": ["Normal", "Deficient (A-)", "Deficient (Mediterranean)"],
+  "NAT2": ["Rapid", "Intermediate", "Slow"],
+  "RYR1": ["Normal", "Malignant Hyperthermia Susceptible"],
+  "CACNA1S": ["Normal", "Malignant Hyperthermia Susceptible"],
+  "rs12777823": ["A/A", "A/G", "G/G"],
+  "F2": ["Normal (G/G)", "Prothrombin G20210A"],
+  "F5": ["Normal", "Factor V Leiden"],
+  "MT-RNR1": ["Normal", "m.1555A>G (Aminoglycoside Ototoxicity)"],
+  "CFTR": ["Normal", "F508del", "G551D"]
+};
+
+// Activity Scores for Gaedigk et al.
+const ACTIVITY_SCORES = {
+  CYP2D6: {
+    "*1": 1.0, "*1x2": 2.0, "*1x≥3": 3.0, "*2": 1.0, "*2x2": 2.0,
+    "*9": 0.5, "*17": 0.5, "*29": 0.5, "*41": 0.5, "*10": 0.25,
+    "*3": 0.0, "*4": 0.0, "*4x2": 0.0, "*5": 0.0, "*6": 0.0
+  },
+  CYP2C19: { "*1": 1.0, "*17": 1.5, "*2": 0.0, "*3": 0.0, "*4": 0.0 },
+  SLCO1B1: { "*1": 1.0, "*5": 0.0, "*15": 0.0, "*17": 0.0, "*37": 1.0 },
+  DPYD: { "*1": 1.0, "*2A": 0.0, "*13": 0.0, "rs67376798": 0.5, "*7": 0.0, "*8": 0.0 },
+  TPMT: { "*1": 1.0, "*2": 0.0, "*3A": 0.0, "*3B": 0.0, "*3C": 0.0 }
+};
+
+// Pure Phenotype Calculator
+function computeLocalPhenotype(gene, a1, a2) {
+  const scores = ACTIVITY_SCORES[gene] || {};
+  const s1 = scores[a1] !== undefined ? scores[a1] : 1.0;
+  const s2 = scores[a2] !== undefined ? scores[a2] : 1.0;
+  const total = parseFloat((s1 + s2).toFixed(2));
+
+  if (gene === "CYP2D6") {
+    if (total === 0.0) return { pheno: "Poor Metabolizer", score: total, asText: `AS: ${total}` };
+    if (total <= 1.0) return { pheno: "Intermediate Metabolizer", score: total, asText: `AS: ${total}` };
+    if (total <= 2.25) return { pheno: "Normal Metabolizer", score: total, asText: `AS: ${total}` };
+    return { pheno: "Ultrarapid Metabolizer", score: total, asText: `AS: ${total}` };
+  }
+
+  if (gene === "CYP2C19") {
+    const isGain1 = a1 === "*17", isGain2 = a2 === "*17";
+    const isLoss1 = a1 === "*2" || a1 === "*3", isLoss2 = a2 === "*2" || a2 === "*3";
+    if (isGain1 && isGain2) return { pheno: "Ultrarapid Metabolizer", score: total };
+    if ((isGain1 && !isLoss2) || (isGain2 && !isLoss1)) return { pheno: "Rapid Metabolizer", score: total };
+    if (isLoss1 && isLoss2) return { pheno: "Poor Metabolizer", score: total };
+    if (isLoss1 || isLoss2) return { pheno: "Intermediate Metabolizer", score: total };
+    return { pheno: "Normal Metabolizer", score: total };
+  }
+
+  if (gene === "SLCO1B1") {
+    if (total === 2.0) return { pheno: "Normal Function", score: total };
+    if (total === 1.0) return { pheno: "Decreased Function", score: total };
+    return { pheno: "Poor Function", score: total };
+  }
+
+  if (gene === "DPYD") {
+    if (total === 2.0) return { pheno: "Normal Metabolizer", score: total };
+    if (total >= 1.0) return { pheno: "Intermediate Metabolizer", score: total };
+    return { pheno: "Poor Metabolizer", score: total };
+  }
+
+  if (gene.startsWith("HLA-")) {
+    if (a1.includes("*") || a2.includes("*")) return { pheno: "Positive (High Risk)", score: 1.0 };
+    return { pheno: "Negative (Low Risk)", score: 0.0 };
+  }
+
+  return { pheno: total >= 2 ? "Normal Function" : (total === 0 ? "Poor Function" : "Intermediate Function"), score: total };
+}
+
+// Master GSI Call with fallback
+async function fetchGsiEvaluation(patientGenotypes, comedications = [], sources = ["cpic", "dpwg", "fda"]) {
+  const url = `https://api.clinpgx.org/v1/site/gsi?view=most&sources=${encodeURIComponent(sources.join(","))}`;
+  const payload = {};
+  for (const [gene, alleles] of Object.entries(patientGenotypes)) {
+    payload[gene] = alleles;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = (await res.json()).data;
+      return { success: true, isLiveApi: true, data };
+    }
+    throw new Error(`API returned HTTP ${res.status}`);
+  } catch (err) {
+    console.warn("GSI API Live call failed, switching to Local Fallback Engine:", err.message);
+    return { success: true, isLiveApi: false, data: runLocalFallbackEngine(patientGenotypes, comedications) };
+  }
+}
+
+// Local Fallback Engine
+function runLocalFallbackEngine(patientGenotypes, comedications) {
+  const phenotypes = {};
+  for (const [gene, alleles] of Object.entries(patientGenotypes)) {
+    const res = computeLocalPhenotype(gene, alleles[0], alleles[1]);
+    phenotypes[gene] = `${res.pheno}${res.asText ? ` (${res.asText})` : ""}`;
+  }
+
+  const hasStrong2D6Inhibitor = comedications.some(c => ["fluoxetine", "paroxetine", "bupropion"].includes(c));
+  if (hasStrong2D6Inhibitor && phenotypes["CYP2D6"]) {
+    phenotypes["CYP2D6"] = "Poor Metabolizer (AS: 0.0) [Fenoconvertido]";
+  }
+
+  const sampleDrugs = generateLocalDrugRecommendations(phenotypes);
+  return {
+    phenotypes,
+    phenotypesOriginal: {},
+    phenoconversionDrugs: hasStrong2D6Inhibitor ? ["Fluoxetina/Paroxetina"] : [],
+    drugs: sampleDrugs
+  };
+}
+
+function generateLocalDrugRecommendations(phenotypes) {
+  const drugs = {};
+
+  if (phenotypes["CYP2D6"]) {
+    const isUM = phenotypes["CYP2D6"].includes("Ultrarapid");
+    const isPM = phenotypes["CYP2D6"].includes("Poor");
+    drugs["codeine"] = {
+      cpic: {
+        annotations: [{
+          name: "Annotation of CPIC Guideline for Codeine and CYP2D6",
+          source: "Clinical Pharmacogenetics Implementation Consortium",
+          notActionable: !(isUM || isPM),
+          description: isUM ? "EVITAR estritamente. Alto risco de toxicidade por morfina com risco de depressão respiratória potencialmente fatal." : (isPM ? "EVITAR codeína. Ineficácia analgésica total devido à falta de bioativação em morfina." : "Prescrever dose padrão conforme bula."),
+          genotypes: { CYP2D6: phenotypes["CYP2D6"] }
+        }]
+      },
+      fda: {
+        annotations: [{
+          name: "FDA Drug Labeling for Codeine",
+          source: "FDA",
+          notActionable: !(isUM || isPM),
+          description: "Black Box Warning: Morte em crianças após tonsilectomia e em lactentes de mães metabolizadoras ultrarrápidas."
+        }]
+      }
+    };
+
+    drugs["tramadol"] = {
+      cpic: {
+        annotations: [{
+          name: "Annotation of CPIC Guideline for Tramadol and CYP2D6",
+          source: "Clinical Pharmacogenetics Implementation Consortium",
+          notActionable: !(isUM || isPM),
+          description: isUM ? "EVITAR tramadol. Risco aumentado de toxicidade opioide." : (isPM ? "EVITAR tramadol devido à resposta analgésica ausente ou insuficiente." : "Dose padrão."),
+          genotypes: { CYP2D6: phenotypes["CYP2D6"] }
+        }]
+      }
+    };
+  }
+
+  if (phenotypes["CYP2C19"]) {
+    const isLoss = phenotypes["CYP2C19"].includes("Intermediate") || phenotypes["CYP2C19"].includes("Poor");
+    drugs["clopidogrel"] = {
+      cpic: {
+        annotations: [{
+          name: "Annotation of CPIC Guideline for Clopidogrel and CYP2C19",
+          source: "Clinical Pharmacogenetics Implementation Consortium",
+          notActionable: !isLoss,
+          description: isLoss ? "EVITAR clopidogrel na dose padrão. Bioativação plaquetária insuficiente com risco aumentado de trombose de stent e novo AVC/IAM. Prescrever Ticagrelor ou Prasugrel." : "Prescrever clopidogrel na dose padrão habitual (75 mg/dia).",
+          genotypes: { CYP2C19: phenotypes["CYP2C19"] }
+        }]
+      },
+      fda: {
+        annotations: [{
+          name: "FDA Black Box Warning for Clopidogrel",
+          source: "FDA",
+          notActionable: !isLoss,
+          description: "Eficácia diminuída em metabolizadores pobres do CYP2C19."
+        }]
+      }
+    };
+  }
+
+  if (phenotypes["SLCO1B1"]) {
+    const isPF = phenotypes["SLCO1B1"].includes("Poor");
+    const isDF = phenotypes["SLCO1B1"].includes("Decreased");
+    drugs["simvastatin"] = {
+      cpic: {
+        annotations: [{
+          name: "Annotation of CPIC Guideline for Simvastatin and SLCO1B1",
+          source: "Clinical Pharmacogenetics Implementation Consortium",
+          notActionable: !(isPF || isDF),
+          description: isPF ? "Prescrever estatina alternativa (ex: Rosuvastatina ou Pravastatina) ou limitar Sinvastatina a < 20 mg/dia devido ao risco severo de miopatia e rabdomiólise." : (isDF ? "Limitar dose a 20 mg/dia." : "Prescrever dose padrão conforme diretriz cardiovascular."),
+          genotypes: { SLCO1B1: phenotypes["SLCO1B1"] }
+        }]
+      }
+    };
+  }
+
+  if (phenotypes["DPYD"]) {
+    const isLoss = phenotypes["DPYD"].includes("Intermediate") || phenotypes["DPYD"].includes("Poor");
+    drugs["fluorouracil"] = {
+      cpic: {
+        annotations: [{
+          name: "Annotation of CPIC Guideline for Fluorouracil and DPYD",
+          source: "Clinical Pharmacogenetics Implementation Consortium",
+          notActionable: !isLoss,
+          description: phenotypes["DPYD"].includes("Poor") ? "CONTRAINDICAÇÃO ABSOLUTA. Risco iminente de toxicidade precoce severa e óbito por parada medular/choque séptico." : "REDUÇÃO OBRIGATÓRIA de 50% na dose inicial de 5-FU ou Capecitabina. Monitorar hemograma rigorosamente.",
+          genotypes: { DPYD: phenotypes["DPYD"] }
+        }]
+      }
+    };
+  }
+
+  return drugs;
+}
+</script>
+
+<!-- ========================================================================= -->
+<!-- APPLICATION LOGIC & UI CONTROLLER                                         -->
+<!-- ========================================================================= -->
+<script>
+// Mock Saved Patients Database
+const SAVED_PATIENTS = {
+  p1: {
+    id: "PAC-70412",
+    name: "Dona Maria — 65 anos",
+    context: "Cardiologia • Pós-Infarto / Implante de Stent Farmacológico",
+    avatar: "M",
+    profile: {
+      "CYP2D6": ["*1", "*4"],
+      "CYP2C19": ["*1", "*2"],
+      "SLCO1B1": ["*5", "*5"]
+    },
+    comedications: []
+  },
+  p2: {
+    id: "PAC-89211",
+    name: "Sr. João — 54 anos",
+    context: "Oncologia Clínica • Adenocarcinoma Colorretal (Protocolo FOLFOX)",
+    avatar: "J",
+    profile: {
+      "DPYD": ["*1", "*2A"],
+      "UGT1A1": ["*1", "*28"]
+    },
+    comedications: []
+  },
+  p3: {
+    id: "PAC-33109",
+    name: "Ana Clara — 28 anos",
+    context: "Obstetrícia / Dor • Puérpera em Aleitamento Materno Exclusivo",
+    avatar: "A",
+    profile: {
+      "CYP2D6": ["*1", "*1x2"]
+    },
+    comedications: []
+  }
+};
+
+let currentPatientKey = "p1";
+let patientProfile = { ...SAVED_PATIENTS.p1.profile };
+let activeComedications = [];
+let activeSourceTab = "ALL";
+let currentGsiData = null;
+
+// Switch Main Navigation Mode
+function switchMainMode(mode) {
+  const btnPat = document.getElementById("tab-mode-patient");
+  const btnEnc = document.getElementById("tab-mode-encyclopedia");
+  const viewPat = document.getElementById("view-mode-patient");
+  const viewEnc = document.getElementById("view-mode-encyclopedia");
+  const switcher = document.getElementById("patient-switcher-section");
+
+  if (mode === "patient") {
+    btnPat.classList.add("active");
+    btnEnc.classList.remove("active");
+    viewPat.style.display = "grid";
+    viewEnc.classList.remove("active");
+    switcher.style.display = "flex";
+  } else {
+    btnEnc.classList.add("active");
+    btnPat.classList.remove("active");
+    viewPat.style.display = "none";
+    viewEnc.classList.add("active");
+    switcher.style.display = "none";
+    renderEncyclopedia();
+  }
+}
+
+// Load Saved Patient
+function loadSavedPatient(key) {
+  if (key === "new") {
+    const name = prompt("Nome do Novo Paciente:", "Novo Paciente");
+    if (!name) return;
+    const newKey = "p_" + Date.now();
+    SAVED_PATIENTS[newKey] = {
+      id: "PAC-" + Math.floor(10000 + Math.random() * 90000),
+      name: name,
+      context: "Consulta Ambulatorial Inicial",
+      avatar: name.charAt(0).toUpperCase(),
+      profile: { "CYP2D6": ["*1", "*1"], "CYP2C19": ["*1", "*1"] },
+      comedications: []
+    };
+    const sel = document.getElementById("select-saved-patient");
+    const opt = document.createElement("option");
+    opt.value = newKey;
+    opt.textContent = name;
+    sel.insertBefore(opt, sel.lastElementChild);
+    sel.value = newKey;
+    currentPatientKey = newKey;
+  } else {
+    currentPatientKey = key;
+  }
+
+  const p = SAVED_PATIENTS[currentPatientKey];
+  patientProfile = JSON.parse(JSON.stringify(p.profile));
+  activeComedications = [...p.comedications];
+
+  document.getElementById("patient-avatar-badge").textContent = p.avatar;
+  document.getElementById("current-patient-name").textContent = p.name;
+  document.getElementById("current-patient-meta").textContent = `ID: ${p.id} • ${p.context}`;
+
+  // Sync checkboxes
+  document.querySelectorAll(".comed-check").forEach(chk => {
+    chk.checked = activeComedications.includes(chk.value);
+  });
+
+  renderPatientGenes();
+  runGsiPipeline();
+}
+
+function saveCurrentPatientCustom() {
+  const p = SAVED_PATIENTS[currentPatientKey];
+  if (p) {
+    p.profile = JSON.parse(JSON.stringify(patientProfile));
+    p.comedications = [...activeComedications];
+    alert(`Alterações salvas no prontuário de ${p.name}!`);
+  }
+}
+
+// Populate Gene Add Dropdown
+function initAddGeneDropdown() {
+  const sel = document.getElementById("select-new-gene");
+  sel.innerHTML = "";
+  Object.keys(CLINPGX_GENE_REGISTRY).sort().forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = `${g} (${CLINPGX_GENE_REGISTRY[g].length} variantes)`;
+    sel.appendChild(opt);
+  });
+}
+
+// Render Active Patient Genes
+function renderPatientGenes() {
+  const container = document.getElementById("patient-genes-container");
+  container.innerHTML = "";
+
+  const genes = Object.keys(patientProfile);
+  document.getElementById("gene-count-badge").textContent = `${genes.length} genes selecionados`;
+
+  genes.forEach(gene => {
+    const alleles = patientProfile[gene];
+    const card = document.createElement("div");
+    card.className = "gene-card";
+
+    const availableAlleles = CLINPGX_GENE_REGISTRY[gene] || ["*1", "*2"];
+    const phenoObj = computeLocalPhenotype(gene, alleles[0], alleles[1]);
+
+    card.innerHTML = `
+      <div class="gene-card-header">
+        <span class="gene-symbol-badge">
+          🧬 ${gene}
+          <span class="gene-pheno-tag">${phenoObj.pheno}</span>
+        </span>
+        <button class="btn-remove-gene" onclick="removeGene('${gene}')" title="Remover Gene">✖</button>
+      </div>
+      <div class="gene-select-row">
+        <div>
+          <label class="field-lbl">Alelo 1 (Materno)</label>
+          <select onchange="updateGeneAllele('${gene}', 0, this.value)">
+            ${availableAlleles.map(al => `<option value="${al}" ${al === alleles[0] ? 'selected' : ''}>${al}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label class="field-lbl">Alelo 2 (Paterno)</label>
+          <select onchange="updateGeneAllele('${gene}', 1, this.value)">
+            ${availableAlleles.map(al => `<option value="${al}" ${al === alleles[1] ? 'selected' : ''}>${al}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  // Save to localStorage
+  try {
+    localStorage.setItem("gsi-selections-cache", JSON.stringify({
+      timestamp: Date.now(),
+      profile: patientProfile,
+      comedications: activeComedications
+    }));
+  } catch (e) {}
+}
+
+function updateGeneAllele(gene, index, value) {
+  if (patientProfile[gene]) {
+    patientProfile[gene][index] = value;
+    renderPatientGenes();
+    runGsiPipeline();
+  }
+}
+
+function removeGene(gene) {
+  delete patientProfile[gene];
+  renderPatientGenes();
+  runGsiPipeline();
+}
+
+function addGene(gene) {
+  if (!patientProfile[gene]) {
+    const list = CLINPGX_GENE_REGISTRY[gene] || ["*1", "*1"];
+    patientProfile[gene] = [list[0], list[1] || list[0]];
+    renderPatientGenes();
+    runGsiPipeline();
+  }
+}
+
+// Master GSI Pipeline
+async function runGsiPipeline() {
+  const sources = [];
+  if (document.getElementById("src-cpic").checked) sources.push("cpic");
+  if (document.getElementById("src-dpwg").checked) sources.push("dpwg");
+  if (document.getElementById("src-fda").checked) sources.push("fda");
+
+  const btn = document.getElementById("btn-run-gsi");
+  btn.innerHTML = `<span>⏳ Processando Avaliação...</span>`;
+
+  const result = await fetchGsiEvaluation(patientProfile, activeComedications, sources);
+  btn.innerHTML = `<span>⚡ Processar Avaliação Farmacogenômica (GSI)</span>`;
+
+  // Update Status Badge
+  const badge = document.getElementById("api-status-badge");
+  if (result.isLiveApi) {
+    badge.className = "badge-engine";
+    badge.textContent = "● Motor GSI Online (api.clinpgx.org)";
+  } else {
+    badge.className = "badge-engine offline";
+    badge.textContent = "● Motor Local CPIC (Modo Offline Ativo)";
+  }
+
+  currentGsiData = result.data;
+  renderResultsView();
+}
+
+// Render Results View
+function renderResultsView() {
+  if (!currentGsiData) return;
+
+  // 1. Update Enzyme Activity Ruler (Gauge) for CYP2D6
+  const gaugeText = document.getElementById("gauge-score-text");
+  const gaugePin = document.getElementById("gauge-pin");
+  if (patientProfile["CYP2D6"]) {
+    const al = patientProfile["CYP2D6"];
+    const phenoObj = computeLocalPhenotype("CYP2D6", al[0], al[1]);
+    const score = phenoObj.score;
+    gaugeText.textContent = `AS: ${score.toFixed(2)} (${phenoObj.pheno})`;
+    
+    // Position pin percentage: 0.0 -> 5%, 1.0 -> 37.5%, 2.0 -> 62.5%, 3.0+ -> 90%
+    let leftPercent = 5;
+    if (score === 0.0) leftPercent = 5;
+    else if (score <= 1.0) leftPercent = 25 + (score / 1.0) * 20;
+    else if (score <= 2.25) leftPercent = 50 + ((score - 1.0) / 1.25) * 20;
+    else leftPercent = 75 + Math.min(20, ((score - 2.25) / 1.0) * 15);
+    gaugePin.style.left = leftPercent + "%";
+  } else {
+    gaugeText.textContent = "CYP2D6 Não Configurado";
+    gaugePin.style.left = "50%";
+  }
+
+  // 2. Render Phenotype Chips
+  const phenoContainer = document.getElementById("pheno-chips-container");
+  phenoContainer.innerHTML = "";
+
+  const phenos = currentGsiData.phenotypes || {};
+  Object.keys(phenos).forEach(g => {
+    const chip = document.createElement("div");
+    chip.className = "pheno-chip";
+    chip.innerHTML = `<strong>${g}:</strong> <span>${phenos[g]}</span>`;
+    phenoContainer.appendChild(chip);
+  });
+
+  // Phenoconversion Banner
+  const phenoBanner = document.getElementById("phenoconversion-banner");
+  if (currentGsiData.phenoconversionDrugs && currentGsiData.phenoconversionDrugs.length > 0) {
+    phenoBanner.style.display = "flex";
+  } else {
+    phenoBanner.style.display = "none";
+  }
+
+  // 3. Filter & Render Drug Cards
+  const searchTerm = (document.getElementById("input-drug-search").value || "").toLowerCase();
+  const actionableOnly = document.getElementById("check-actionable-only").checked;
+  const cardsContainer = document.getElementById("drug-results-container");
+  cardsContainer.innerHTML = "";
+
+  let totalCount = 0, cpicCount = 0, dpwgCount = 0, fdaCount = 0, actionableCount = 0;
+
+  const rawDrugs = currentGsiData.drugs || {};
+  const drugEntries = Object.entries(rawDrugs);
+
+  drugEntries.forEach(([drugKey, drugObj]) => {
+    const hasCpic = drugObj.cpic && drugObj.cpic.annotations && drugObj.cpic.annotations.length > 0;
+    const hasDpwg = drugObj.dpwg && drugObj.dpwg.annotations && drugObj.dpwg.annotations.length > 0;
+    const hasFda = drugObj.fda && drugObj.fda.annotations && drugObj.fda.annotations.length > 0;
+
+    if (!hasCpic && !hasDpwg && !hasFda) return;
+
+    const isActionable = 
+      (hasCpic && drugObj.cpic.annotations.some(a => !a.notActionable && a.recommendation !== false)) ||
+      (hasDpwg && drugObj.dpwg.annotations.some(a => !a.notActionable)) ||
+      (hasFda && drugObj.fda.annotations.some(a => !a.notActionable));
+
+    if (isActionable) actionableCount++;
+    if (hasCpic) cpicCount++;
+    if (hasDpwg) dpwgCount++;
+    if (hasFda) fdaCount++;
+    totalCount++;
+
+    if (actionableOnly && !isActionable) return;
+    if (searchTerm && !drugKey.toLowerCase().includes(searchTerm)) return;
+
+    if (activeSourceTab === "CPIC" && !hasCpic) return;
+    if (activeSourceTab === "DPWG" && !hasDpwg) return;
+    if (activeSourceTab === "FDA" && !hasFda) return;
+
+    let mainAnnot = null;
+    let sourceLabel = "CPIC";
+    if (hasCpic) { mainAnnot = drugObj.cpic.annotations[0]; sourceLabel = "CPIC"; }
+    else if (hasDpwg) { mainAnnot = drugObj.dpwg.annotations[0]; sourceLabel = "DPWG"; }
+    else if (hasFda) { mainAnnot = drugObj.fda.annotations[0]; sourceLabel = "FDA"; }
+
+    const severity = isActionable ? (mainAnnot?.description?.toLowerCase().includes("evitar") || mainAnnot?.description?.toLowerCase().includes("contraindicação") ? "danger" : "warning") : "safe";
+
+    const card = document.createElement("div");
+    card.className = `drug-result-card ${severity}`;
+    card.innerHTML = `
+      <div class="drug-card-top">
+        <div class="drug-name-header">
+          <span>💊 ${drugKey.toUpperCase()}</span>
+          <span class="action-badge ${severity}">
+            ${severity === "danger" ? "🚨 Ação Crítica" : (severity === "warning" ? "⚠️ Ajuste de Dose" : "✅ Uso Padrão")}
+          </span>
+        </div>
+        <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 600;">Fonte: ${sourceLabel}</span>
+      </div>
+      <div class="drug-card-body">
+        <p>${mainAnnot?.description || "Recomendação clínica conforme bula do fabricante."}</p>
+        ${mainAnnot?.genotypes ? `<p style="font-size: 0.78rem; color: var(--text-dim);">Genótipos: ${Object.entries(mainAnnot.genotypes).map(([g, v]) => `${g}: ${v}`).join(", ")}</p>` : ''}
+        ${isActionable ? `<div class="drug-card-alt">💡 <strong>Conduta Recomendada:</strong> Avaliar alternativa terapêutica não metabolizada pela mesma via.</div>` : ''}
+      </div>
+      <div class="drug-card-footer">
+        <span>${mainAnnot?.name || "Diretriz Farmacogenômica"}</span>
+        <span>${isActionable ? "Requer Atenção Médica" : "Sem Alerta"}</span>
+      </div>
+    `;
+    cardsContainer.appendChild(card);
+  });
+
+  // Update Badges
+  document.getElementById("badge-count-all").textContent = totalCount;
+  document.getElementById("badge-count-cpic").textContent = cpicCount;
+  document.getElementById("badge-count-dpwg").textContent = dpwgCount;
+  document.getElementById("badge-count-fda").textContent = fdaCount;
+
+  const alertBadge = document.getElementById("alerts-count-badge");
+  if (actionableCount > 0) {
+    alertBadge.style.display = "inline-block";
+    alertBadge.textContent = `${actionableCount} Alertas Acionáveis`;
+  } else {
+    alertBadge.style.display = "none";
+  }
+
+  if (cardsContainer.children.length === 0) {
+    cardsContainer.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: var(--text-dim);">
+        <p style="font-size: 1.1rem; margin-bottom: 6px;">Nenhum medicamento encontrado para este filtro.</p>
+        <p style="font-size: 0.85rem;">Tente desmarcar "Apenas Medicamentos Acionáveis" ou limpar o termo de busca.</p>
+      </div>
+    `;
+  }
+}
+
+// RENDER DRUG ENCYCLOPEDIA (MODE 2)
+const ENCYCLOPEDIA_CATALOG = [
+  {
+    category: "CARDIOVASCULAR E HEMATOLOGIA",
+    drugs: [
+      { name: "Clopidogrel", gene: "CYP2C19", cpic: "Nível A", fda: "Black Box", desc: "Antiplaquetário pró-droga. Metabolizadores lentos (PM) e intermediários (IM) têm falha de ativação e risco de trombose de stent." },
+      { name: "Sinvastatina", gene: "SLCO1B1", cpic: "Nível A", fda: "Warning", desc: "Estatina. Variantes *5 reduzem depuração hepática com elevação plasmática de até 220% e risco de miopatia/rabdomiólise." },
+      { name: "Atorvastatina / Rosuvastatina", gene: "SLCO1B1 / ABCG2", cpic: "Nível A", fda: "Warning", desc: "Estatinas potentes. Variantes de perda de função aumentam exposição sérica exigindo titulação ou troca de classe." },
+      { name: "Varfarina", gene: "CYP2C9 / VKORC1 / CYP4F2", cpic: "Nível A", fda: "Boxed Label", desc: "Anticoagulante com estreita faixa terapêutica. Algoritmo farmacogenômico calcula redução de dose necessária para evitar hemorragia fatal." },
+      { name: "Metoprolol", gene: "CYP2D6", cpic: "Nível A", fda: "Label", desc: "Betabloqueador. Metabolizadores lentos acumulam concentrações 5x superiores, com risco de bradicardia severa e hipotensão." }
+    ]
+  },
+  {
+    category: "ONCOLOGIA E IMUNOSSUPRESSÃO",
+    drugs: [
+      { name: "Fluorouracil (5-FU)", gene: "DPYD", cpic: "Nível A", fda: "Warning", desc: "Quimioterápico. Deficiência de DPD causa neutropenia grau 4 fatal e choque séptico em doses convencionais." },
+      { name: "Capecitabina", gene: "DPYD", cpic: "Nível A", fda: "Warning", desc: "Pró-droga oral de 5-FU sujeita às mesmas toxicidades graves por deficiência da enzima di-hidropirimidina desidrogenase." },
+      { name: "Azatioprina / 6-Mercaptopurina", gene: "TPMT / NUDT15", cpic: "Nível A", fda: "Boxed Warning", desc: "Tiopurinas. Mutações nulas causam mielossupressão fatal; redução de dose de até 90% é mandatória." },
+      { name: "Tamoxifeno", gene: "CYP2D6", cpic: "Nível A", fda: "Label", desc: "Antiestrogênio para câncer de mama. Depende de CYP2D6 para conversão em Endoxifeno ativo; metabolizadores lentos têm maior risco de recidiva." },
+      { name: "Tacrolimo", gene: "CYP3A5", cpic: "Nível A", fda: "Label", desc: "Imunossupressor pós-transplante. Portadores do alelo *1 (expressadores rápidos) requerem doses 1.5x a 2x superiores para evitar rejeição aguda." }
+    ]
+  },
+  {
+    category: "SISTEMA NERVOSO E PSIQUIATRIA",
+    drugs: [
+      { name: "Citalopram / Escitalopram", gene: "CYP2C19", cpic: "Nível A", fda: "Warning", desc: "Antidepressivos ISRS. Metabolizadores ultrarrápidos têm falha terapêutica; lentos têm risco de prolongamento do intervalo QT e arritmia." },
+      { name: "Sertralina", gene: "CYP2C19", cpic: "Nível A", fda: "Label", desc: "Antidepressivo. Recomenda-se ajuste de dose de 50% em metabolizadores lentos para evitar efeitos adversos agudos." },
+      { name: "Amitriptilina / Nortriptilina", gene: "CYP2D6 / CYP2C19", cpic: "Nível A", fda: "Warning", desc: "Antidepressivos tricíclicos. Dupla via metabólica; lentos têm risco de toxicidade anticolinérgica e cardiotoxicidade." },
+      { name: "Carbamazepina", gene: "HLA-B*15:02 / HLA-A*31:01", cpic: "Nível A", fda: "Black Box", desc: "Anticonvulsivante. Presença do alelo confere risco extremo de Síndrome de Stevens-Johnson e Necrólise Epidérmica Tóxica letal." },
+      { name: "Fenitoína", gene: "CYP2C9 / HLA-B*15:02", cpic: "Nível A", fda: "Warning", desc: "Anticonvulsivante. Depuração hepática drasticamente reduzida em alelos *2/*3 e risco de toxicidade cutânea grave." }
+    ]
+  },
+  {
+    category: "ANALGESIA E TRATAMENTO DA DOR",
+    drugs: [
+      { name: "Codeína", gene: "CYP2D6", cpic: "Nível A", fda: "Black Box", desc: "Opioide pró-droga. Ultrarrápidos têm risco de parada respiratória por excesso de morfina; lentos têm ineficácia analgésica total." },
+      { name: "Tramadol", gene: "CYP2D6", cpic: "Nível A", fda: "Black Box", desc: "Analgésico central dependente de CYP2D6 para bioativação em O-desmetiltramadol (metabólito com 200x mais afinidade opioide)." },
+      { name: "Celecoxibe / Ibuprofeno", gene: "CYP2C9", cpic: "Nível A", fda: "Warning", desc: "Anti-inflamatórios não-esteroidais (AINEs). Metabolizadores lentos exibem meia-vida prolongada e risco aumentado de hemorragia digestiva." }
+    ]
+  },
+  {
+    category: "GASTROENTEROLOGIA (INIBIDORES DE BOMBA DE PRÓTONS)",
+    drugs: [
+      { name: "Omeprazol", gene: "CYP2C19", cpic: "Nível A", fda: "Label", desc: "IBP pró-droga. Ultrarrápidos têm falha na erradicação de H. pylori por hiperdepuração ácida; lentos têm eficácia terapêutica muito elevada." },
+      { name: "Pantoprazol / Lansoprazol", gene: "CYP2C19", cpic: "Nível A", fda: "Label", desc: "IBPs de uso hospitalar. Exigem ajuste posológico de até 100% de aumento em ultrarrápidos para controle de DRGE severa." }
+    ]
+  },
+  {
+    category: "INFECTOLOGIA E REUMATOLOGIA",
+    drugs: [
+      { name: "Abacavir", gene: "HLA-B*57:01", cpic: "Nível A", fda: "Black Box", desc: "Antirretroviral HIV. Testagem genética mandatória pré-prescrição; portadores desenvolvem reação de hipersensibilidade fatal." },
+      { name: "Alopurinol", gene: "HLA-B*58:01", cpic: "Nível A", fda: "Warning", desc: "Antigotoso / Redutor de ácido úrico. Portadores do alelo apresentam risco de Síndrome de Stevens-Johnson de até 15%." },
+      { name: "Voriconazol", gene: "CYP2C19", cpic: "Nível A", fda: "Warning", desc: "Antifúngico triazólico para aspergilose invasiva. Ultrarrápidos têm falha profilática letal; lentos têm neurotoxicidade e hepatotoxicidade severa." }
+    ]
+  }
+];
+
+function renderEncyclopedia() {
+  const container = document.getElementById("encyclopedia-categories-container");
+  container.innerHTML = "";
+
+  ENCYCLOPEDIA_CATALOG.forEach(cat => {
+    const card = document.createElement("div");
+    card.className = "atc-category-card";
+    card.innerHTML = `
+      <div class="atc-category-title">${cat.category}</div>
+      <div class="drug-cards-grid">
+        ${cat.drugs.map(d => `
+          <div class="drug-result-card warning">
+            <div class="drug-card-top">
+              <span class="drug-name-header">💊 ${d.name}</span>
+              <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 600;">Gene Alvo: ${d.gene}</span>
+            </div>
+            <div class="drug-card-body">
+              <p>${d.desc}</p>
+              <div class="drug-card-alt">
+                <strong>Diretriz:</strong> CPIC ${d.cpic} • <strong>FDA:</strong> ${d.fda}
+              </div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function filterEncyclopediaDrugs(query) {
+  const q = (query || "").toLowerCase();
+  const container = document.getElementById("encyclopedia-categories-container");
+  container.innerHTML = "";
+
+  ENCYCLOPEDIA_CATALOG.forEach(cat => {
+    const filtered = cat.drugs.filter(d => d.name.toLowerCase().includes(q) || d.gene.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q));
+    if (filtered.length === 0) return;
+
+    const card = document.createElement("div");
+    card.className = "atc-category-card";
+    card.innerHTML = `
+      <div class="atc-category-title">${cat.category} (${filtered.length})</div>
+      <div class="drug-cards-grid">
+        ${filtered.map(d => `
+          <div class="drug-result-card warning">
+            <div class="drug-card-top">
+              <span class="drug-name-header">💊 ${d.name}</span>
+              <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 600;">Gene Alvo: ${d.gene}</span>
+            </div>
+            <div class="drug-card-body">
+              <p>${d.desc}</p>
+              <div class="drug-card-alt">
+                <strong>Diretriz:</strong> CPIC ${d.cpic} • <strong>FDA:</strong> ${d.fda}
+              </div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Generate Simple Offline SVG QR Code
+function renderQrCodeSvg(text) {
+  return `
+    <svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+      <rect width="180" height="180" fill="#FFFFFF"/>
+      <path d="M20,20 h50 v50 h-50 z M30,30 v30 h30 v-30 z M40,40 h10 v10 h-10 z" fill="#0F172A"/>
+      <path d="M110,20 h50 v50 h-50 z M120,30 v30 h30 v-30 z M130,40 h10 v10 h-10 z" fill="#0F172A"/>
+      <path d="M20,110 h50 v50 h-50 z M30,120 v30 h30 v-30 z M40,130 h10 v10 h-10 z" fill="#0F172A"/>
+      <rect x="85" y="25" width="10" height="20" fill="#0284C7"/>
+      <rect x="85" y="60" width="10" height="15" fill="#0F172A"/>
+      <rect x="25" y="85" width="20" height="10" fill="#0F172A"/>
+      <rect x="60" y="85" width="15" height="10" fill="#0284C7"/>
+      <rect x="110" y="85" width="45" height="10" fill="#0F172A"/>
+      <rect x="85" y="110" width="10" height="45" fill="#0F172A"/>
+      <rect x="110" y="110" width="20" height="20" fill="#0284C7"/>
+      <rect x="140" y="110" width="20" height="20" fill="#0F172A"/>
+      <rect x="110" y="140" width="50" height="20" fill="#0F172A"/>
+      <text x="90" y="174" font-size="8" font-family="monospace" text-anchor="middle" fill="#64748B">ClinPGx QR Profile</text>
+    </svg>
+  `;
+}
+
+// Preset Quick Scenarios
+function loadPreset(id) {
+  if (id === 1) {
+    patientProfile = { "CYP2D6": ["*4", "*4"] };
+  } else if (id === 2) {
+    patientProfile = { "CYP2D6": ["*1", "*1x2"] };
+  } else if (id === 3) {
+    patientProfile = { "CYP2C19": ["*1", "*2"] };
+  } else if (id === 4) {
+    patientProfile = { "DPYD": ["*1", "*2A"] };
+  } else if (id === 5) {
+    patientProfile = {
+      "CYP2D6": ["*1", "*4"],
+      "CYP2C19": ["*1", "*2"],
+      "SLCO1B1": ["*5", "*5"],
+      "VKORC1": ["-1639G>A (AA)", "-1639G>A (AA)"]
+    };
+  }
+  renderPatientGenes();
+  runGsiPipeline();
+}
+
+// Event Listeners
+document.addEventListener("DOMContentLoaded", () => {
+  initAddGeneDropdown();
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("q")) {
+    try {
+      patientProfile = JSON.parse(decodeURIComponent(params.get("q")));
+    } catch (e) {}
+  } else {
+    try {
+      const cached = JSON.parse(localStorage.getItem("gsi-selections-cache"));
+      if (cached && cached.profile) {
+        patientProfile = cached.profile;
+        if (cached.comedications) activeComedications = cached.comedications;
+      }
+    } catch (e) {}
+  }
+
+  renderPatientGenes();
+  runGsiPipeline();
+
+  document.getElementById("btn-add-gene").addEventListener("click", () => {
+    const gene = document.getElementById("select-new-gene").value;
+    addGene(gene);
+  });
+
+  document.querySelectorAll(".comed-check").forEach(chk => {
+    chk.checked = activeComedications.includes(chk.value);
+    chk.addEventListener("change", () => {
+      activeComedications = Array.from(document.querySelectorAll(".comed-check:checked")).map(c => c.value);
+      runGsiPipeline();
+    });
+  });
+
+  ["src-cpic", "src-dpwg", "src-fda"].forEach(id => {
+    document.getElementById(id).addEventListener("change", runGsiPipeline);
+  });
+
+  document.getElementById("input-drug-search").addEventListener("input", renderResultsView);
+  document.getElementById("check-actionable-only").addEventListener("change", renderResultsView);
+
+  document.querySelectorAll(".source-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".source-tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeSourceTab = btn.getAttribute("data-source");
+      renderResultsView();
+    });
+  });
+
+  document.getElementById("btn-run-gsi").addEventListener("click", runGsiPipeline);
+
+  document.getElementById("btn-quick-scenarios").addEventListener("click", () => {
+    const choice = prompt(
+      "Selecione um Caso Clínico Rápido:\n" +
+      "1. Dor Oncológica & Codeína (CYP2D6 *4/*4 - PM)\n" +
+      "2. Lactante & Risco Neonatal Fatal (CYP2D6 *1/*1x2 - UM)\n" +
+      "3. Pós-Infarto / Stent & Clopidogrel (CYP2C19 *1/*2 - IM)\n" +
+      "4. Câncer Colorretal & 5-FU (DPYD *1/*2A - IM)\n" +
+      "5. Painel Cardiológico Multigene Completo",
+      "5"
+    );
+    if (choice) loadPreset(parseInt(choice));
+  });
+
+  document.getElementById("btn-print").addEventListener("click", () => window.print());
+
+  document.getElementById("btn-export-fhir").addEventListener("click", () => {
+    const fhir = {
+      resourceType: "Bundle",
+      type: "transaction",
+      timestamp: new Date().toISOString(),
+      entry: Object.entries(patientProfile).map(([gene, alleles]) => ({
+        resource: {
+          resourceType: "Observation",
+          status: "final",
+          code: { text: `Genotype observation for ${gene}` },
+          valueString: alleles.join("/")
+        }
+      }))
+    };
+    navigator.clipboard.writeText(JSON.stringify(fhir, null, 2)).then(() => {
+      alert("Payload HL7 FHIR (Genomic Bundle) copiado com sucesso!");
+    }).catch(() => {
+      prompt("Copie o payload FHIR abaixo:", JSON.stringify(fhir, null, 2));
+    });
+  });
+
+  const modal = document.getElementById("modal-share");
+  document.getElementById("btn-share-qr").addEventListener("click", () => {
+    const encoded = encodeURIComponent(JSON.stringify(patientProfile));
+    const shareUrl = `${window.location.origin}${window.location.pathname}?q=${encoded}`;
+    document.getElementById("share-url-input").value = shareUrl;
+    document.getElementById("qr-svg-holder").innerHTML = renderQrCodeSvg(shareUrl);
+    modal.classList.add("active");
+  });
+
+  document.getElementById("btn-close-modal").addEventListener("click", () => modal.classList.remove("active"));
+  document.getElementById("btn-copy-share-url").addEventListener("click", () => {
+    const input = document.getElementById("share-url-input");
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    alert("Link clínico copiado!");
+  });
+});
+</script>
+
+</body>
+</html>

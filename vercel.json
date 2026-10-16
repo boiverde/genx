@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/", "destination": "/prototipo/prototype-clinpgx.html" },
+    { "source": "/docs/manifesto", "destination": "/docs/MANIFESTO_IMPACTO_E_USO_CLINICO.html" },
+    { "source": "/docs/dossie", "destination": "/docs/DOSSIE_LEGAL_E_CLINICO_CLINPGX.html" }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "data": [
+    {
+      "objCls": "Gene",
+      "id": "PA134865839",
+      "symbol": "SLCO1B1",
+      "name": "solute carrier organic anion transporter family member 1B1",
+      "alleleFile": "SLCO1B1_allele_definition_table.xlsx",
+      "alleleFunctionSource": "CPIC",
+      "amp": false,
+      "buildVersion": "GRCh38",
+      "cbStart": "p12.2",
+      "cbStop": "p12.1",
+      "chr": {
+        "objCls": "Chromosome",
+        "id": "PA508",
+        "name": "chr12"
+      },
+      "chrStartPosB37": 21284128,
+      "chrStartPosB38": 21131194,
+      "chrStopPosB37": 21392730,
+      "chrStopPosB38": 21239796,
+      "cpicGene": true,
+      "hasNonStandardHaplotypes": false,
+      "hideHaplotypes": false,
+      "history": [],
+      "pharmVarGene": true,
+      "strand": "plus",
+      "usesStarAlleles": true,
+      "vipCitation": {
+        "id": 7160436,
+        "title": "PharmGKB very important pharmacogene: SLCO1B1.",
+        "_sameAs": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3086841",
+        "authors": [
+          "Oshiro Connie",
+          "Mangravite Lara",
+          "Klein Teri",
+          "Altman Russ"
+        ],
+        "crossReferences": [
+          {
+            "id": 1449247466,
+            "resource": "PubMed Central",
+            "resourceId": "PMC3086841",
+            "_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3086841"
+          },
+          {
+            "id": 569554371,
+            "resource": "PubMed",
+            "resourceId": "19952871",
+            "_url": "https://www.ncbi.nlm.nih.gov/pubmed/19952871"
+          },
+          {
+            "id": 1449247467,
+            "resource": "DOI",
+            "resourceId": "10.1097/FPC.0b013e328333b99c",
+            "_url": "https://doi.org/10.1097%2FFPC.0b013e328333b99c"
+          }
+        ],
+        "day": -1,
+        "journal": "Pharmacogenetics and genomics",
+        "month": 3,
+        "objCls": "Literature",
+        "page": "211-6",
+        "pediatric": false,
+        "pgkbPublication": true,
+        "pubDate": "2010-03-01",
+        "pubmedMeshTerms": [],
+        "terms": [
+          {
+            "id": 1454108640,
+            "resource": "ClinPGx Tags",
+            "term": "PharmGKB",
+            "termId": "pgkbTags:1454108640"
+          },
+          {
+            "id": 1451577482,
+            "resource": "PGx Paper Types",
+            "term": "Review",
+            "termId": "pgxPaperTypes:1451577482"
+          }
+        ],
+        "type": "Literature",
+        "volume": "20",
+        "year": 2010
+      },
+      "vipId": "PA166169500",
+      "vipSummary": {
+        "id": 1448640151,
+        "html": "<p>SLCO1B1 is one of the key pharmacogenes involved in implementation of pharmacogenomics. The gene encodes the OATP1B1 transporter.</p>\n<ul>\n<li>It is involved in guidelines for statins including CPIC guidelines for <a href=\"/guidelineAnnotation/PA166262221\">atorvastatin</a>, <a href=\"/guidelineAnnotation/PA166105005\">simvastatin</a>, and <a href=\"/guidelineAnnotation/PA166262321\">rosuvastatin</a> (<a href=\"/gene/PA134865839/prescribingInfo\">go to list of all guidelines with SLCO1B1</a>).</li>\n<li>the nomenclature has been set by <a rel=\"noopener noreferrer\" href=\"https://www.pharmvar.org/gene/SLCO1B1\" target=\"_blank\">PharmVar</a></li>\n<li>key variant pages are <a href=\"/variant/PA166154579\">rs4149056</a> also known as c.521T&gt;C (found in SLCO1B1*5 and SLCO1B1*15 and other alleles) and <a href=\"/variant/PA166154547\">rs2306283</a> (also known as c.388A&gt;G and part of *15).</li>\n<li>See the <a href=\"/page/slco1b1RefMaterials\">Gene-specific Information Tables</a> for Allele Definitions (for which variants comprise which star alleles), Allele function assignments (normal function, no function, decreased or increased function etc) and Diplotype-Phenotype Table (for how the alleles combine to form metabolizer phenotypes for PM, NM, UM).</li>\n</ul>\n"
+      },
+      "vipTier": "Tier 1"
+    }
+  ],
+  "status": "success"
+}

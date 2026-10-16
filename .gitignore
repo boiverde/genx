@@ -1,0 +1,8 @@
+# Dependencias locais e temporarias
+node_modules/
+scratch/
+.env
+.env.local
+.DS_Store
+Thumbs.db
+*.log
