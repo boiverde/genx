@@ -2,7 +2,12 @@
 // Note: Origin/Referer is not authentication. All browser traffic is public and rate-limited.
 const { createHash, timingSafeEqual } = require('node:crypto');
 const ALLOWED_SOURCES = new Set(['cpic','dpwg','fda']);
-const GENE = /^[A-Za-z0-9_-]{2,24}$/;
+const GENE = new Set(["CYP2D6","CYP2C19","CYP2C9","CYP2B6","CYP3A4","CYP3A5","SLCO1B1","DPYD","TPMT","NUDT15","UGT1A1","ABCG2","HLA-A","HLA-B","VKORC1","CYP4F2","G6PD","NAT2","RYR1","CACNA1S","rs12777823","F2","F5","MT-RNR1","CFTR"]);
+function gsiData(result) {
+  return result && typeof result === 'object' && !Array.isArray(result) &&
+    result.data && typeof result.data === 'object' && !result.drugs
+    ? result.data : result;
+}
 function send(res,status,value) {
   res.setHeader('Cache-Control','no-store');
   return res.status(status).json(value);
@@ -57,11 +62,11 @@ module.exports=async function handler(req,res) {
   if(!genes||typeof genes!=='object'||Array.isArray(genes))return send(res,400,{error:'invalid_genotypes'});
   const names=Object.keys(genes).sort();
   if(!names.length||names.length>25)return send(res,400,{error:'invalid_genotypes'});
-  const normalized={};
+  const normalized=Object.create(null);
   for(const gene of names) {
     const a=genes[gene];
-    if(!GENE.test(gene)||!Array.isArray(a)||a.length!==2||
-      a.some(v=>typeof v!=='string'||!v.length||v.length>32)){
+    if(!GENE.has(gene)||!Array.isArray(a)||a.length!==2||
+      a.some(v=>typeof v!=='string'||!v.length||v.length>80)){
       return send(res,400,{error:'invalid_genotypes'});
     }
     normalized[gene]=a;
@@ -88,7 +93,7 @@ module.exports=async function handler(req,res) {
     });
     if(!cached.ok)throw new Error('cache_read_failure');
     const rows=await cached.json();
-    if(Array.isArray(rows)&&rows.length)return send(res,200,{source:'cache',data:rows[0].response_payload});
+    if(Array.isArray(rows)&&rows.length)return send(res,200,{source:'cache',data:gsiData(rows[0].response_payload)});
     if(!await quota(base,headers,'upstream',null)){
       res.setHeader('Retry-After','1');
       return send(res,429,{error:'upstream_rate_limit'});
@@ -99,7 +104,7 @@ module.exports=async function handler(req,res) {
       body:JSON.stringify(normalized),signal:AbortSignal.timeout(9000)
     });
     if(!upstream.ok)return send(res,502,{error:'upstream_unavailable',status:upstream.status});
-    const result=await upstream.json();
+    const result=gsiData(await upstream.json());
     const saved=await fetch(endpoint+'?on_conflict=id',{
       method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({id,genotype_payload:normalized,response_payload:result,
