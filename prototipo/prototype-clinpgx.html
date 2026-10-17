@@ -1247,6 +1247,19 @@ function computeHlaPhenotype(gene, a1, a2) {
 
 // Pure Phenotype Calculator with Unknown Allele Fail-Safe (F01)
 function computeLocalPhenotype(gene, a1, a2) {
+  // Never interpret a gene/allele outside the supported selection catalogue.
+  // This applies to HLA and all 25 genes, not just activity-score genes.
+  const known = Object.prototype.hasOwnProperty.call(CLINPGX_GENE_REGISTRY, gene)
+    ? CLINPGX_GENE_REGISTRY[gene] : [];
+  if (!known.includes(a1) || !known.includes(a2)) {
+    return {
+      pheno: "Indeterminado / Variante Não Mapeada",
+      score: null,
+      asText: "Indeterminado",
+      isIndeterminate: true,
+      warning: "Alelo não reconhecido no catálogo GENX. Revisão clínica obrigatória."
+    };
+  }
   // HLA Gene Family: use drug-specific interpretation (F04)
   if (gene.startsWith("HLA-")) {
     return computeHlaPhenotype(gene, a1, a2);
@@ -1687,6 +1700,20 @@ function initAddGeneDropdown() {
   });
 }
 
+// Preserve the actual genotype imported from a shared URL or localStorage.
+// Missing alleles are visible (but disabled) until the user explicitly selects
+// a recognized option. Never silently replace the displayed value with *1.
+function renderAlleleOptions(gene, selectedAllele) {
+  const known = CLINPGX_GENE_REGISTRY[gene] || [];
+  const recognized = known.includes(selectedAllele);
+  const unrecognized = recognized ? "" :
+    `<option value="${escapeHtml(selectedAllele)}" selected disabled>⚠ Alelo não reconhecido: ${escapeHtml(selectedAllele)}</option>`;
+  const options = known.map(allele =>
+    `<option value="${escapeHtml(allele)}"${allele === selectedAllele ? " selected" : ""}>${escapeHtml(allele)}</option>`
+  ).join("");
+  return unrecognized + options;
+}
+
 // Render Active Patient Genes
 function renderPatientGenes() {
   const container = document.getElementById("patient-genes-container");
@@ -1700,28 +1727,28 @@ function renderPatientGenes() {
     const card = document.createElement("div");
     card.className = "gene-card";
 
-    const availableAlleles = CLINPGX_GENE_REGISTRY[gene] || ["*1", "*2"];
     const phenoObj = computeLocalPhenotype(gene, alleles[0], alleles[1]);
+    const geneArg = escapeHtml(JSON.stringify(gene));
 
     card.innerHTML = `
       <div class="gene-card-header">
         <span class="gene-symbol-badge">
-          🧬 ${gene}
-          <span class="gene-pheno-tag">${phenoObj.pheno}</span>
+          🧬 ${escapeHtml(gene)}
+          <span class="gene-pheno-tag">${escapeHtml(phenoObj.pheno)}</span>
         </span>
-        <button class="btn-remove-gene" onclick="removeGene('${gene}')" title="Remover Gene">✖</button>
+        <button class="btn-remove-gene" onclick="removeGene(${geneArg})" title="Remover Gene">✖</button>
       </div>
       <div class="gene-select-row">
         <div>
           <label class="field-lbl">Alelo 1 (Materno)</label>
-          <select onchange="updateGeneAllele('${gene}', 0, this.value)">
-            ${availableAlleles.map(al => `<option value="${al}" ${al === alleles[0] ? 'selected' : ''}>${al}</option>`).join("")}
+          <select onchange="updateGeneAllele(${geneArg}, 0, this.value)">
+            ${renderAlleleOptions(gene, alleles[0])}
           </select>
         </div>
         <div>
           <label class="field-lbl">Alelo 2 (Paterno)</label>
-          <select onchange="updateGeneAllele('${gene}', 1, this.value)">
-            ${availableAlleles.map(al => `<option value="${al}" ${al === alleles[1] ? 'selected' : ''}>${al}</option>`).join("")}
+          <select onchange="updateGeneAllele(${geneArg}, 1, this.value)">
+            ${renderAlleleOptions(gene, alleles[1])}
           </select>
         </div>
       </div>
