@@ -10,7 +10,7 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'prototipo', 'prototype-
 const match = html.match(/<script id="domain-logic">([\s\S]*?)<\/script>/);
 assert.ok(match, 'Expected clinical domain script');
 const context = vm.createContext({});
-vm.runInContext(match[1] + '\nglobalThis.clinicalTest = { runLocalFallbackEngine };', context, { timeout: 2000 });
+vm.runInContext(match[1] + '\nglobalThis.clinicalTest = { runLocalFallbackEngine, CLINPGX_GENE_REGISTRY };', context, { timeout: 2000 });
 const { runLocalFallbackEngine } = context.clinicalTest;
 const handler = require('../api/gsi');
 
@@ -41,6 +41,36 @@ test('Nonaffected DPYD retains local reference annotations', () => {
   const result = runLocalFallbackEngine({ DPYD: ['*1', '*2A'] }, []);
   assert.equal(result.clinicalReviewRequired, false);
   assert.ok(result.drugs.fluorouracil);
+});
+
+
+// The server and browser must use exactly the same supported allele catalogue.
+test('P0 frontend/backend allele registries remain synchronized across all 25 genes', () => {
+  const serverRegistry = require('../api/gsi_alleles');
+  const frontRegistry = JSON.parse(JSON.stringify(context.clinicalTest.CLINPGX_GENE_REGISTRY));
+  assert.equal(Object.keys(serverRegistry).length, 25);
+  assert.deepEqual(serverRegistry, frontRegistry);
+});
+test('P0 unknown HLA allele is indeterminate offline, not a negative result', () => {
+  const result = runLocalFallbackEngine({ 'HLA-B': ['*UNMAPPED', 'Negative'] }, []);
+  assert.equal(result.clinicalReviewRequired, true);
+  assert.equal(Object.keys(result.drugs).length, 0);
+});
+test('P0 imported unsupported allele stays visible and selected in the UI', () => {
+  const script = html.match(/function renderAlleleOptions\(gene, selectedAllele\) \{[\s\S]*?\n\}/);
+  assert.ok(script, 'Missing allele option renderer');
+  vm.runInContext(script[0] + '\nglobalThis.testAlleleOptions = renderAlleleOptions;', context);
+  const unknown = context.testAlleleOptions('CYP2D6', '*UNMAPPED');
+  assert.match(unknown, /value="\*UNMAPPED" selected disabled/);
+  assert.match(unknown, /Alelo não reconhecido: \*UNMAPPED/);
+  const normal = context.testAlleleOptions('CYP2D6', '*1');
+  assert.match(normal, /value="\*1" selected/);
+  assert.doesNotMatch(normal, /Alelo não reconhecido/);
+  const injected = context.testAlleleOptions('CYP2D6', '<img onerror=alert(1)>');
+  assert.doesNotMatch(injected, /<img/);
+  assert.match(injected, /&lt;img/);
+  assert.match(html, /renderAlleleOptions\(gene, alleles\[0\]\)/);
+  assert.match(html, /renderAlleleOptions\(gene, alleles\[1\]\)/);
 });
 
 const officialFixture = {
@@ -107,6 +137,42 @@ test('P0 old cached fenoconversion is blocked and genetic phenotype restored', a
   assert.equal(response.body.data.clinicalReviewRequired, true);
   assert.equal(Object.keys(response.body.data.drugs).length, 0);
   assert.equal(response.body.data.phenotypes.CYP2D6, 'Normal Metabolizer (AS: 2.0)');
+});
+test('P0 unknown CYP2D6 blocks online recommendations before upstream lookup', async () => {
+  const response = await callProxy({
+    genotype: { CYP2D6: ['*1', '*UNMAPPED'] },
+    medications: []
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.source, 'validation');
+  assert.equal(response.body.data.clinicalReviewRequired, true);
+  assert.equal(response.body.data.clinicalReviewCode, 'UNMAPPED_ALLELES');
+  assert.equal(Object.keys(response.body.data.drugs).length, 0);
+  assert.equal(response.calls.some(c => c.includes('/rest/v1/gsi_cache')), false);
+  assert.equal(response.calls.some(c => c.includes('api.clinpgx.org')), false);
+});
+test('P0 previously cached unknown CYP2C19 still gets blocked before cache read', async () => {
+  const response = await callProxy({
+    mode: 'cached',
+    genotype: { CYP2C19: ['*1', '*UNMAPPED'] },
+    medications: []
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.source, 'validation');
+  assert.equal(response.body.data.clinicalReviewRequired, true);
+  assert.equal(Object.keys(response.body.data.drugs).length, 0);
+  assert.equal(response.calls.some(c => c.includes('/rest/v1/gsi_cache')), false);
+});
+test('P0 known patient alleles still access cached response', async () => {
+  const response = await callProxy({
+    mode: 'cached',
+    medications: [],
+    genotype: { CYP2D6: ['*1', '*1'] }
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.source, 'cache');
+  assert.ok(response.body.data.drugs.codeine);
+  assert.equal(response.calls.some(c => c.includes('/rest/v1/gsi_cache')), true);
 });
 test('No CYP2D6 inhibitor returns unchanged drug guidance', async () => {
   const response = await callProxy({ medications: [] });
