@@ -1,8 +1,9 @@
 // GENX serverless GSI gateway; sensitive Supabase credentials are server-only.
 // Note: Origin/Referer is not authentication. All browser traffic is public and rate-limited.
 const { createHash, timingSafeEqual } = require('node:crypto');
+const SUPPORTED_ALLELES = require('./gsi_alleles');
 const ALLOWED_SOURCES = new Set(['cpic','dpwg','fda']);
-const GENE = new Set(["CYP2D6","CYP2C19","CYP2C9","CYP2B6","CYP3A4","CYP3A5","SLCO1B1","DPYD","TPMT","NUDT15","UGT1A1","ABCG2","HLA-A","HLA-B","VKORC1","CYP4F2","G6PD","NAT2","RYR1","CACNA1S","rs12777823","F2","F5","MT-RNR1","CFTR"]);
+const GENE = new Set(Object.keys(SUPPORTED_ALLELES));
 function gsiData(result) {
   return result && typeof result === 'object' && !Array.isArray(result) &&
     result.data && typeof result.data === 'object' && !result.drugs
@@ -105,6 +106,12 @@ module.exports=async function handler(req,res) {
      s.some(v=>typeof v!=='string'||!ALLOWED_SOURCES.has(v))){
     return send(res,400,{error:'invalid_sources'});
   }
+  // A schema-valid string is not necessarily a clinically recognized allele.
+  // Block the entire assessment if any genotype is outside the GENX UI registry.
+  const unmappedGenes = names.filter(gene => {
+    const supported = SUPPORTED_ALLELES[gene];
+    return !Array.isArray(supported) || normalized[gene].some(allele => !supported.includes(allele));
+  });
   const sources=[...new Set(s)].sort();
   const comedications=Array.isArray(input.comedications)
     ? [...new Set(input.comedications.filter(c=>typeof c==='string'&&c.length<=40))].sort()
@@ -118,6 +125,22 @@ module.exports=async function handler(req,res) {
     if(!await quota(base,headers,'client',fingerprint(req,token))){
       res.setHeader('Retry-After','60');
       return send(res,429,{error:'client_rate_limit'});
+    }
+    // Fail closed *before* cache or ClinPGx lookups, including historical
+    // cache entries created before this check existed. Return a safe envelope
+    // so browsers can display a clear reason and block FHIR export.
+    if(unmappedGenes.length){
+      const phenotypes=Object.fromEntries(unmappedGenes.map(gene =>
+        [gene,'Indeterminado / Variante Não Mapeada']));
+      return send(res,200,{source:'validation',data:{
+        phenotypes,
+        phenotypesOriginal:{...phenotypes},
+        drugs:{},
+        clinicalReviewRequired:true,
+        clinicalReviewCode:'UNMAPPED_ALLELES',
+        clinicalReviewMessage:'Alelo(s) fora do catálogo GENX em: '+unmappedGenes.join(', ')+
+          '. Não há interpretação clínica validada para esta avaliação. Nenhuma recomendação de medicamento ou dose será emitida.'
+      }});
     }
     const cached=await fetch(endpoint+'?id=eq.'+id+'&expires_at=gt.'+
       encodeURIComponent(new Date().toISOString())+'&select=response_payload',{
